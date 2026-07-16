@@ -41,7 +41,7 @@ import com.koinonia.igreja.presentation.features.members.MemberListScreen
 import com.koinonia.igreja.presentation.features.members.MembersViewModel
 import com.koinonia.igreja.presentation.features.reception.ReceptionScreen
 import com.koinonia.igreja.presentation.features.reception.ReceptionViewModel
-import com.koinonia.igreja.presentation.features.reports.ReportsDashboardScreen
+import com.koinonia.igreja.presentation.features.reports.DashboardScreen
 import com.koinonia.igreja.presentation.features.reports.ReportsViewModel
 
 @Composable
@@ -234,7 +234,7 @@ fun AppNavigation(
 
                 composable("reports") {
                     val viewModel: ReportsViewModel = hiltViewModel()
-                    ReportsDashboardScreen(
+                    DashboardScreen(
                         viewModel = viewModel,
                         onBack = {
                             navController.navigate("members_list") {
