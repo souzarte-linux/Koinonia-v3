@@ -95,4 +95,40 @@ class AuthRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun loginWithProvider(provider: io.github.jan.supabase.auth.providers.AuthProvider<*, *>): Result<AppRole> {
+        return try {
+            // Realiza login/cadastro social via Supabase Auth
+            supabaseClient.auth.signInWith(provider)
+
+            val session = supabaseClient.auth.currentSessionOrNull()
+                ?: throw Exception("Sessão não iniciada")
+            val userId = session.user?.id ?: throw Exception("Usuário inválido")
+
+            // Busca a Role associada ou cria uma nova de Diácono para testes
+            var role = AppRole.DIACONO
+            try {
+                val roleDto = supabaseClient.postgrest["user_roles"]
+                    .select { filter { eq("user_id", userId) } }
+                    .decodeSingleOrNull<UserRoleDto>()
+
+                if (roleDto != null) {
+                    role = AppRole.valueOf(roleDto.role)
+                } else {
+                    // Cadastra a role de Diácono no banco para ele ter acesso
+                    supabaseClient.postgrest["user_roles"].insert(
+                        mapOf("user_id" to userId, "role" to role.name)
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            _currentUserRole.value = role
+            Result.success(role)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 }

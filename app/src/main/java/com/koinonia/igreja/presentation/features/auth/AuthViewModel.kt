@@ -73,4 +73,16 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+
+    fun loginWithProvider(provider: io.github.jan.supabase.auth.providers.AuthProvider<*, *>) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val result = authRepository.loginWithProvider(provider)
+            result.onSuccess { role ->
+                _authState.value = AuthState.Success(role)
+            }.onFailure { error ->
+                _authState.value = AuthState.Error(error.localizedMessage ?: "Erro na autenticação social")
+            }
+        }
+    }
 }
