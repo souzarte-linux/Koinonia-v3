@@ -1,29 +1,12 @@
 package com.koinonia.igreja.presentation.features.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +26,8 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isSignUpMode by remember { mutableStateOf(false) }
+
     val authState by viewModel.authState.collectAsState()
 
     // Reage ao estado de sucesso para navegar
@@ -55,18 +40,18 @@ fun LoginScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Ministério do Diácono",
+                text = if (isSignUpMode) "Criar Nova Conta" else "Ministério do Diácono",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -92,15 +77,16 @@ fun LoginScreen(
                 shape = RoundedCornerShape(12.dp)
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Esqueceu a Senha
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                TextButton(onClick = onForgotPasswordClick) {
-                    Text("Esqueceu a senha?")
+            if (!isSignUpMode) {
+                Spacer(modifier = Modifier.height(8.dp))
+                // Esqueceu a Senha
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    TextButton(onClick = onForgotPasswordClick) {
+                        Text("Esqueceu a senha?")
+                    }
                 }
             }
 
@@ -115,7 +101,13 @@ fun LoginScreen(
             }
 
             Button(
-                onClick = { viewModel.login(email, password) },
+                onClick = {
+                    if (isSignUpMode) {
+                        viewModel.signUp(email, password)
+                    } else {
+                        viewModel.login(email, password)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -128,8 +120,23 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = if (isSignUpMode) "Cadastrar" else "Entrar",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Alternador entre Login e Cadastro
+            TextButton(
+                onClick = { isSignUpMode = !isSignUpMode }
+            ) {
+                Text(
+                    text = if (isSignUpMode) "Já possui uma conta? Faça Login" else "Não tem cadastro? Crie uma conta"
+                )
             }
         }
     }

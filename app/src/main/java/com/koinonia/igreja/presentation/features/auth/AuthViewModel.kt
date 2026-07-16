@@ -60,4 +60,17 @@ class AuthViewModel @Inject constructor(
             _authState.value = AuthState.Idle
         }
     }
+
+    fun signUp(email: String, pass: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val result = authRepository.signUp(email, pass)
+            
+            result.onSuccess { role ->
+                _authState.value = AuthState.Success(role)
+            }.onFailure { error ->
+                _authState.value = AuthState.Error(error.localizedMessage ?: "Erro desconhecido")
+            }
+        }
+    }
 }

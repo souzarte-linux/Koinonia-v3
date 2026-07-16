@@ -1,9 +1,9 @@
 package com.koinonia.igreja.core.util
 
 object Constants {
-    // Configurações do Supabase (Substituir com credenciais reais em produção)
-    const val SUPABASE_URL = "https://seu-projeto.supabase.co"
-    const val SUPABASE_ANON_KEY = "sua-anon-key-aqui"
+    // Configurações do Supabase (Credenciais oficiais de produção)
+    const val SUPABASE_URL = "https://wpgplnsopcqoldqalhrq.supabase.co"
+    const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwZ3BsbnNvcGNxb2xkcWFsaHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjY4MjAsImV4cCI6MjA5OTcwMjgyMH0.PuocS1VMFzEQrMeMgzeRt01UJEUl5Y5jtCTL9EeXU-s"
 
     // Configurações de Fuso Horário
     const val SALVADOR_TIMEZONE = "America/Bahia"
