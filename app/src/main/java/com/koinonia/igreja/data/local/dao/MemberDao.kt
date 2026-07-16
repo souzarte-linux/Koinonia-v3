@@ -1,0 +1,35 @@
+package com.koinonia.igreja.data.local.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.koinonia.igreja.data.local.entity.MemberEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface MemberDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMember(member: MemberEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMembers(members: List<MemberEntity>)
+
+    @Query("SELECT * FROM members ORDER BY fullName ASC")
+    fun getAllMembers(): Flow<List<MemberEntity>>
+    
+    @Query("SELECT * FROM members WHERE id = :id")
+    suspend fun getMemberById(id: String): MemberEntity?
+
+    @Query("SELECT * FROM members WHERE familyId = :familyId")
+    suspend fun getFamilyMembers(familyId: String): List<MemberEntity>
+
+    @Query("SELECT * FROM members WHERE syncPending = 1")
+    suspend fun getPendingSyncMembers(): List<MemberEntity>
+    
+    @Query("UPDATE members SET syncPending = 0 WHERE id = :id")
+    suspend fun markAsSynced(id: String)
+
+    @Query("DELETE FROM members WHERE id = :id")
+    suspend fun deleteById(id: String)
+}
