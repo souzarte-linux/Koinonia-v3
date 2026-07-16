@@ -14,6 +14,7 @@ sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
     data class Success(val role: AppRole) : AuthState()
+    data class VerificationSent(val email: String) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -67,7 +68,11 @@ class AuthViewModel @Inject constructor(
             val result = authRepository.signUp(email, pass)
             
             result.onSuccess { role ->
-                _authState.value = AuthState.Success(role)
+                if (authRepository.isSessionActive()) {
+                    _authState.value = AuthState.Success(role)
+                } else {
+                    _authState.value = AuthState.VerificationSent(email)
+                }
             }.onFailure { error ->
                 _authState.value = AuthState.Error(error.localizedMessage ?: "Erro desconhecido")
             }

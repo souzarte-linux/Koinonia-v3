@@ -69,13 +69,14 @@ class AuthRepositoryImpl @Inject constructor(
     suspend fun signUp(email: String, password: String): Result<AppRole> {
         return try {
             // 1. Cadastra no provedor de identidade (Supabase Auth)
-            supabaseClient.auth.signUpWith(Email) {
+            val userInfo = supabaseClient.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
             }
 
-            // 2. Recupera o ID do usuário criado
-            val userId = supabaseClient.auth.currentUserOrNull()?.id
+            // 2. Recupera o ID do usuário criado a partir do retorno ou do estado atual
+            val userId = userInfo?.id 
+                ?: supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Falha ao obter ID do usuário")
 
             // 3. Atribui uma role padrão de teste (DIACONO) na tabela user_roles
@@ -88,12 +89,18 @@ class AuthRepositoryImpl @Inject constructor(
                 e.printStackTrace()
             }
 
-            _currentUserRole.value = defaultRole
+            if (supabaseClient.auth.currentSessionOrNull() != null) {
+                _currentUserRole.value = defaultRole
+            }
             Result.success(defaultRole)
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
         }
+    }
+
+    fun isSessionActive(): Boolean {
+        return supabaseClient.auth.currentSessionOrNull() != null
     }
 
     suspend fun loginWithProvider(provider: io.github.jan.supabase.auth.providers.AuthProvider<*, *>): Result<AppRole> {
