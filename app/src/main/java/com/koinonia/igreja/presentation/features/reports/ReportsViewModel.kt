@@ -1,24 +1,65 @@
 package com.koinonia.igreja.presentation.features.reports
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.koinonia.igreja.data.local.dao.AttendanceWithMemberInfo
+import com.koinonia.igreja.data.local.dao.ReportsDao
+import com.koinonia.igreja.domain.usecase.AnalyzeArrivalPeaksUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ReportsViewModel @Inject constructor() : ViewModel() {
+class ReportsViewModel @Inject constructor(
+    private val reportsDao: ReportsDao,
+    private val analyzeArrivalPeaksUseCase: AnalyzeArrivalPeaksUseCase
+) : ViewModel() {
 
-    private val _attendanceRate = MutableStateFlow(84.5f) // 84.5% de presença geral
-    val attendanceRate: StateFlow<Float> = _attendanceRate.asStateFlow()
+    // Lista Reativa do Ranking de Faltas
+    val topAbsentMembers = reportsDao.getTopAbsentMembers()
 
-    private val _totalMembers = MutableStateFlow(142)
-    val totalMembers: StateFlow<Int> = _totalMembers.asStateFlow()
+    // Estados de retrocompatibilidade para a tela de dashboard
+    val attendanceRate = kotlinx.coroutines.flow.MutableStateFlow(85.5)
+    val totalMembers = kotlinx.coroutines.flow.MutableStateFlow(120)
+    val absentCount = kotlinx.coroutines.flow.MutableStateFlow(18)
+    val visitorCountThisMonth = kotlinx.coroutines.flow.MutableStateFlow(7)
 
-    private val _absentCount = MutableStateFlow(22)
-    val absentCount: StateFlow<Int> = _absentCount.asStateFlow()
+    // Estado do Gráfico de Picos (Eixo X: Tempo, Eixo Y: Quantidade de pessoas)
+    private val _arrivalPeaks = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val arrivalPeaks = _arrivalPeaks.asStateFlow()
 
-    private val _visitorCountThisMonth = MutableStateFlow(15)
-    val visitorCountThisMonth: StateFlow<Int> = _visitorCountThisMonth.asStateFlow()
+    // Controle de Ausências de um culto específico
+    private val _pendingContacts = MutableStateFlow<List<AttendanceWithMemberInfo>>(emptyList())
+    val pendingContacts = _pendingContacts.asStateFlow()
+
+    fun loadEventAnalytics(eventId: String) {
+        viewModelScope.launch {
+            _arrivalPeaks.value = analyzeArrivalPeaksUseCase(eventId)
+            
+            reportsDao.getPendingContactsForEvent(eventId).collect {
+                _pendingContacts.value = it
+            }
+        }
+    }
+
+    fun saveContactFollowUp(
+        attendanceId: String,
+        reason: String,
+        details: String?,
+        contactMethod: String,
+        responsibleId: String
+    ) {
+        viewModelScope.launch {
+            reportsDao.updateAbsenceFollowUp(
+                attendanceId = attendanceId,
+                reason = reason,
+                details = details,
+                contactMethod = contactMethod,
+                responsibleId = responsibleId
+            )
+            // A UI atualizará automaticamente graças ao Flow reativo no DAO
+        }
+    }
 }
