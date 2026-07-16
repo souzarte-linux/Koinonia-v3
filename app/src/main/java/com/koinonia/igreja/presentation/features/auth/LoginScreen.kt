@@ -182,7 +182,7 @@ fun LoginScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Botão Google
                 OutlinedButton(
@@ -190,11 +190,19 @@ fun LoginScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
                     border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
                 ) {
-                    Text(text = "Google", color = Color(0xFF4285F4), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = "Google",
+                        color = Color(0xFF4285F4),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
 
                 // Botão Facebook
@@ -202,11 +210,19 @@ fun LoginScreen(
                     onClick = { viewModel.loginWithProvider(Facebook) },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
                 ) {
-                    Text(text = "Facebook", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = "Facebook",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
 
                 // Botão Apple
@@ -214,11 +230,19 @@ fun LoginScreen(
                     onClick = { viewModel.loginWithProvider(Apple) },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
                 ) {
-                    Text(text = "Apple", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = "Apple",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
         }
