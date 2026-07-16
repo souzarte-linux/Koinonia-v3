@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -37,6 +39,9 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isSignUpMode by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Controladores de Foco
+    val passwordFocusRequester = remember { FocusRequester() }
 
     val authState by viewModel.authState.collectAsState()
 
@@ -85,9 +90,9 @@ fun LoginScreen(
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) {
-                        Icons.Filled.Visibility
+                        Icons.Default.Visibility
                     } else {
-                        Icons.Filled.VisibilityOff
+                        Icons.Default.VisibilityOff
                     }
                     val description = if (passwordVisible) "Esconder senha" else "Mostrar senha"
 
@@ -95,7 +100,9 @@ fun LoginScreen(
                         Icon(imageVector = image, contentDescription = description)
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocusRequester),
                 shape = RoundedCornerShape(12.dp)
             )
             
@@ -118,15 +125,6 @@ fun LoginScreen(
                 Text(
                     text = (authState as AuthState.Error).message,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-
-            if (authState is AuthState.VerificationSent) {
-                Text(
-                    text = "Cadastro realizado! Enviamos um e-mail de ativação para ${(authState as AuthState.VerificationSent).email}. Por favor, confirme na sua caixa de entrada antes de fazer login.",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
@@ -255,5 +253,37 @@ fun LoginScreen(
                 }
             }
         }
+    }
+
+    // Popup Dialog de E-mail de Confirmação Pendente
+    if (authState is AuthState.VerificationSent) {
+        val verifiedEmail = (authState as AuthState.VerificationSent).email
+        AlertDialog(
+            onDismissRequest = { /* Não permite fechar clicando fora */ },
+            title = { Text("Ativação de Conta") },
+            text = {
+                Text(
+                    text = "Cadastro realizado! Enviamos um e-mail de ativação para $verifiedEmail. Por favor, confirme na sua caixa de entrada antes de fazer login.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // 1. Preenche e-mail e limpa senha
+                        email = verifiedEmail
+                        password = ""
+                        // 2. Transiciona para a tela de login
+                        isSignUpMode = false
+                        // 3. Reseta o estado na ViewModel
+                        viewModel.resetAuthState()
+                        // 4. Solicita foco no input de senha
+                        passwordFocusRequester.requestFocus()
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
