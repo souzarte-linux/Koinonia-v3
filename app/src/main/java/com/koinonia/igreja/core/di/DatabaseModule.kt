@@ -8,6 +8,7 @@ import com.koinonia.igreja.data.local.dao.AttendanceDao
 import com.koinonia.igreja.data.local.dao.EventDao
 import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.dao.MemberRegistrationDao
+import com.koinonia.igreja.data.local.dao.ReportsDao
 import com.koinonia.igreja.data.local.dao.VisitorDao
 import dagger.Module
 import dagger.Provides
@@ -60,6 +61,12 @@ object DatabaseModule {
     @Singleton
     fun provideVisitorDao(database: AppDatabase): VisitorDao {
         return database.visitorDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideReportsDao(database: AppDatabase): ReportsDao {
+        return database.reportsDao()
     }
 
     @Provides

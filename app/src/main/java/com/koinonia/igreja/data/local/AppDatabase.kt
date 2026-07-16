@@ -8,6 +8,7 @@ import com.koinonia.igreja.data.local.dao.AttendanceDao
 import com.koinonia.igreja.data.local.dao.EventDao
 import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.dao.MemberRegistrationDao
+import com.koinonia.igreja.data.local.dao.ReportsDao
 import com.koinonia.igreja.data.local.dao.VisitorDao
 import com.koinonia.igreja.data.local.entity.AttendanceEntity
 import com.koinonia.igreja.data.local.entity.ChildEntity
@@ -37,4 +38,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun memberRegistrationDao(): MemberRegistrationDao
     abstract fun eventDao(): EventDao
     abstract fun visitorDao(): VisitorDao
+    abstract fun reportsDao(): ReportsDao
 }
