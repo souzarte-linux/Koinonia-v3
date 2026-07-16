@@ -122,6 +122,15 @@ fun LoginScreen(
                 )
             }
 
+            if (authState is AuthState.VerificationSent) {
+                Text(
+                    text = "Cadastro realizado! Enviamos um e-mail de ativação para ${(authState as AuthState.VerificationSent).email}. Por favor, confirme na sua caixa de entrada antes de fazer login.",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
             Button(
                 onClick = {
                     if (isSignUpMode) {
