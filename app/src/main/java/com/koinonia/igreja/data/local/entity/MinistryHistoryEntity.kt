@@ -10,6 +10,7 @@ data class MinistryHistoryEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val memberId: String,
+    val ministryId: String?,
     val ministryName: String,
     val role: String,
     val startDate: Date?,
