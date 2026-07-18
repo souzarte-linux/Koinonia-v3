@@ -32,7 +32,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
@@ -334,7 +338,8 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
                     viewModel.phone.value = input.filter { it.isDigit() }.take(11)
                 },
                 label = { Text("Telefone") },
-                placeholder = { Text("Ex: 71999998888") },
+                placeholder = { Text("Ex: (71) 9.9999-8888") },
+                visualTransformation = PhoneVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
@@ -864,3 +869,43 @@ fun SimpleDropdownField(
         }
     }
 }
+
+class PhoneVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val trimmed = if (text.text.length >= 11) text.text.substring(0, 11) else text.text
+        val out = StringBuilder()
+        
+        for (i in trimmed.indices) {
+            if (i == 0) out.append("(")
+            out.append(trimmed[i])
+            if (i == 1) out.append(") ")
+            if (i == 2) out.append(".")
+            if (i == 6) out.append("-")
+        }
+        
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 0) return 0
+                var transformedOffset = offset
+                if (offset > 0) transformedOffset += 1 // "("
+                if (offset > 2) transformedOffset += 2 // ") "
+                if (offset > 3) transformedOffset += 1 // "."
+                if (offset > 7) transformedOffset += 1 // "-"
+                return transformedOffset.coerceAtMost(out.length)
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 0) return 0
+                var originalOffset = offset
+                if (offset > 0) originalOffset -= 1 // "("
+                if (offset > 3) originalOffset -= 2 // ") "
+                if (offset > 5) originalOffset -= 1 // "."
+                if (offset > 10) originalOffset -= 1 // "-"
+                return originalOffset.coerceAtMost(trimmed.length)
+            }
+        }
+        
+        return TransformedText(AnnotatedString(out.toString()), offsetMapping)
+    }
+}
+

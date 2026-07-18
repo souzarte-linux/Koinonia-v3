@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +17,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -35,10 +39,20 @@ fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
+    val savedEmail by viewModel.savedEmail.collectAsState()
+    val rememberEmail by viewModel.rememberEmail.collectAsState()
+
     var email by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var isSignUpMode by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Sincroniza estados iniciais com as preferências salvas
+    LaunchedEffect(savedEmail, rememberEmail) {
+        email = savedEmail
+        rememberMe = rememberEmail
+    }
 
     // Controladores de Foco
     val passwordFocusRequester = remember { FocusRequester() }
@@ -73,21 +87,46 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Campo E-mail com teclado de e-mail e botão 'Próximo' no teclado
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("E-mail") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { passwordFocusRequester.requestFocus() }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
             
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Campo Senha com botão 'Entrar' (Done) no teclado
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Senha") },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading) {
+                            viewModel.saveRememberedEmail(email, rememberMe)
+                            if (isSignUpMode) {
+                                viewModel.signUp(email, password)
+                            } else {
+                                viewModel.login(email, password)
+                            }
+                        }
+                    }
+                ),
                 trailingIcon = {
                     val image = if (passwordVisible) {
                         Icons.Default.Visibility
@@ -106,13 +145,28 @@ fun LoginScreen(
                 shape = RoundedCornerShape(12.dp)
             )
             
-            if (!isSignUpMode) {
-                Spacer(modifier = Modifier.height(8.dp))
-                // Esqueceu a Senha
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterEnd
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Opção "Gravar usuário" e "Esqueceu a senha?" na mesma linha
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = { rememberMe = it }
+                    )
+                    Text(
+                        text = "Gravar usuário",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                if (!isSignUpMode) {
                     TextButton(onClick = onForgotPasswordClick) {
                         Text("Esqueceu a senha?")
                     }
@@ -131,6 +185,7 @@ fun LoginScreen(
 
             Button(
                 onClick = {
+                    viewModel.saveRememberedEmail(email, rememberMe)
                     if (isSignUpMode) {
                         viewModel.signUp(email, password)
                     } else {
