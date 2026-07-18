@@ -11,6 +11,8 @@ data class ChildEntity(
     val id: String = UUID.randomUUID().toString(),
     val memberId: String,
     val fullName: String,
+    val gender: String, // "Masculino" ou "Feminino"
+    val isBaptized: Boolean = false,
     val birthDate: Date?,
     val createdAt: Date = Date(),
     val syncPending: Boolean = true

@@ -3,6 +3,7 @@ package com.koinonia.igreja.data.local.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import androidx.room.Transaction
 import com.koinonia.igreja.data.local.entity.ChildEntity
 import com.koinonia.igreja.data.local.entity.FamilyEntity
@@ -11,6 +12,9 @@ import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
 
 @Dao
 interface MemberRegistrationDao {
+
+    @Query("SELECT * FROM families ORDER BY name ASC")
+    suspend fun getAllFamilies(): List<FamilyEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFamily(family: FamilyEntity)
