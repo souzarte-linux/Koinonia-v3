@@ -28,7 +28,7 @@ import com.koinonia.igreja.data.local.entity.VisitorEntity
         ChildEntity::class,
         MinistryHistoryEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)

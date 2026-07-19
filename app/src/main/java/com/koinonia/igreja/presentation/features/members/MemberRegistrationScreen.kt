@@ -324,7 +324,11 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
     val socialMedia by viewModel.socialMedia.collectAsState()
     val cep by viewModel.cep.collectAsState()
     val street by viewModel.street.collectAsState()
+    val number by viewModel.number.collectAsState()
     val neighborhood by viewModel.neighborhood.collectAsState()
+    val city by viewModel.city.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val complement by viewModel.complement.collectAsState()
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
@@ -375,19 +379,69 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedTextField(
-            value = street,
-            onValueChange = { viewModel.street.value = it },
-            label = { Text("Logradouro (Rua/Av)") },
-            placeholder = { Text("Ex: Rua das Flores, 123") },
+        // Logradouro (Rua/Av) e Número na mesma linha
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
-        )
+        ) {
+            OutlinedTextField(
+                value = street,
+                onValueChange = { viewModel.street.value = it },
+                label = { Text("Logradouro (Rua/Av)") },
+                placeholder = { Text("Ex: Rua das Flores") },
+                modifier = Modifier.weight(3f)
+            )
+            OutlinedTextField(
+                value = number,
+                onValueChange = { viewModel.number.value = it },
+                label = { Text("Nº") },
+                placeholder = { Text("123") },
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         OutlinedTextField(
             value = neighborhood,
             onValueChange = { viewModel.neighborhood.value = it },
             label = { Text("Bairro") },
             placeholder = { Text("Ex: Centro") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Cidade e Estado (UF) na mesma linha
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = city,
+                onValueChange = { viewModel.city.value = it },
+                label = { Text("Cidade") },
+                placeholder = { Text("Ex: Salvador") },
+                modifier = Modifier.weight(3f)
+            )
+            OutlinedTextField(
+                value = state,
+                onValueChange = { viewModel.state.value = it },
+                label = { Text("UF") },
+                placeholder = { Text("BA") },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Complemento limitado a 400 caracteres com contador
+        OutlinedTextField(
+            value = complement,
+            onValueChange = { if (it.length <= 400) viewModel.complement.value = it },
+            label = { Text("Complemento") },
+            placeholder = { Text("Ex: Apto 402, Bloco B") },
+            supportingText = {
+                Text(
+                    text = "${complement.length}/400",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            },
             modifier = Modifier.fillMaxWidth()
         )
     }
