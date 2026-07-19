@@ -29,13 +29,14 @@ fun ReceptionScreen(
     }
 
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val members by viewModel.membersList.collectAsState()
+    val members by viewModel.membersList.collectAsState(initial = emptyList())
     val showPopup by viewModel.showFamilyPopup.collectAsState()
+    val currentTitle by viewModel.currentEventTitle.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recepção: Culto Ordinário") },
+                title = { Text(currentTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -70,13 +71,14 @@ fun ReceptionScreen(
 
             // Lista Otimizada de Membros
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(members) { member ->
+                items(members) { memberState ->
+                    val member = memberState.member
                     ListItem(
                         headlineContent = { Text(member.fullName) },
                         supportingContent = { Text(member.vehicleType ?: "Sem condução") },
                         trailingContent = {
                             Checkbox(
-                                checked = false, // Aqui leria o estado real de presença
+                                checked = memberState.isPresent,
                                 onCheckedChange = { viewModel.markPresence(member) }
                             )
                         }

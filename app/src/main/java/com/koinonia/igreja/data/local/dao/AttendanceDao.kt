@@ -27,4 +27,7 @@ interface AttendanceDao {
 
     @Query("UPDATE attendance SET syncPending = 0 WHERE id = :id")
     suspend fun markAsSynced(id: String)
+
+    @Query("DELETE FROM attendance WHERE memberId = :memberId AND eventId = :eventId")
+    suspend fun deleteAttendance(memberId: String, eventId: String)
 }

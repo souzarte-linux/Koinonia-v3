@@ -268,6 +268,9 @@ fun AppNavigation(
                         },
                         onNavigateToCreateEvent = {
                             navController.navigate("event_create")
+                        },
+                        onNavigateToReception = { eventId ->
+                            navController.navigate("reception?eventId=$eventId")
                         }
                     )
                 }
@@ -280,10 +283,23 @@ fun AppNavigation(
                     )
                 }
 
-                composable("reception") {
+                composable(
+                    route = "reception?eventId={eventId}",
+                    arguments = listOf(
+                        navArgument("eventId") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
+                    val eventId = backStackEntry.arguments?.getString("eventId")
                     // PROTEÇÃO DE ROTA (Guard Clause / RBAC)
                     if (currentRole == AppRole.ADMIN || currentRole == AppRole.DIACONO) {
                         val viewModel: ReceptionViewModel = hiltViewModel()
+                        LaunchedEffect(eventId) {
+                            viewModel.initReception(eventId, null)
+                        }
                         ReceptionScreen(
                             viewModel = viewModel,
                             onBack = {

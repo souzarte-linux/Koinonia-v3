@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -43,6 +44,7 @@ import java.util.TimeZone
 fun CalendarScreen(
     onBack: () -> Unit,
     onNavigateToCreateEvent: () -> Unit = {},
+    onNavigateToReception: (String) -> Unit = {},
     onMenuClick: (() -> Unit)? = null,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
@@ -341,6 +343,18 @@ fun CalendarScreen(
                                             text = "Local: ${event.address}",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                if (canCreateEvents) {
+                                    IconButton(onClick = {
+                                        onNavigateToReception(event.id)
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.List,
+                                            contentDescription = "Chamada do Evento",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                 }

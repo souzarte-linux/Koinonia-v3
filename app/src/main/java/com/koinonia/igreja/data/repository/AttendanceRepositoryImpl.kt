@@ -74,6 +74,10 @@ class AttendanceRepositoryImpl @Inject constructor(
         triggerSync()
     }
 
+    suspend fun deletePresence(memberId: String, eventId: String) {
+        attendanceDao.deleteAttendance(memberId, eventId)
+    }
+
     private fun triggerSync() {
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>().build()
         // KEEP garante que se já houver um worker de sync rodando, não criaremos outro atoa.
