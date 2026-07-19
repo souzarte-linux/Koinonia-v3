@@ -186,6 +186,9 @@ fun AppNavigation(
                             onEditMember = { memberId ->
                                 navController.navigate("member_edit/$memberId")
                             },
+                            onNavigateToDetails = { memberId ->
+                                navController.navigate("member_details/$memberId")
+                            },
                             onNavigateToRegistration = {
                                 navController.navigate("member_add")
                             }

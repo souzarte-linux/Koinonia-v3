@@ -17,4 +17,10 @@ interface EventDao {
 
     @Query("SELECT * FROM events WHERE id = :id")
     suspend fun getEventById(id: String): EventEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateEvent(event: EventEntity)
+
+    @Query("DELETE FROM events WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

@@ -138,4 +138,8 @@ class AuthRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+    fun getCurrentUserEmail(): String? {
+        return supabaseClient.auth.currentSessionOrNull()?.user?.email
+    }
 }

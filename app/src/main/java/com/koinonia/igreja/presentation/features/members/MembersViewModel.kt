@@ -2,6 +2,10 @@ package com.koinonia.igreja.presentation.features.members
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.koinonia.igreja.data.local.dao.MemberDao
+import com.koinonia.igreja.data.local.entity.ChildEntity
+import com.koinonia.igreja.data.local.entity.MemberEntity
+import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
 import com.koinonia.igreja.domain.model.Member
 import com.koinonia.igreja.domain.repository.MemberRepository
 import com.koinonia.igreja.domain.usecase.GetMembersUseCase
@@ -19,7 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MembersViewModel @Inject constructor(
     private val getMembersUseCase: GetMembersUseCase,
-    private val memberRepository: MemberRepository
+    private val memberRepository: MemberRepository,
+    private val memberDao: MemberDao
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -39,13 +44,28 @@ class MembersViewModel @Inject constructor(
     private val _selectedMember = MutableStateFlow<Member?>(null)
     val selectedMember: StateFlow<Member?> = _selectedMember.asStateFlow()
 
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
+    // Rich MemberEntity states for read-only detailed view
+    private val _selectedMemberEntity = MutableStateFlow<MemberEntity?>(null)
+    val selectedMemberEntity: StateFlow<MemberEntity?> = _selectedMemberEntity.asStateFlow()
+
+    val selectedChildren = MutableStateFlow<List<ChildEntity>>(emptyList())
+    val selectedMinistries = MutableStateFlow<List<MinistryHistoryEntity>>(emptyList())
 
     fun loadMemberDetails(id: String) {
         viewModelScope.launch {
             _selectedMember.value = memberRepository.getMemberById(id)
+        }
+    }
+
+    fun loadMemberEntityDetails(id: String) {
+        viewModelScope.launch {
+            try {
+                _selectedMemberEntity.value = memberDao.getMemberById(id)
+                selectedChildren.value = memberDao.getChildrenByMemberId(id)
+                selectedMinistries.value = memberDao.getMinistryHistoryByMemberId(id)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
