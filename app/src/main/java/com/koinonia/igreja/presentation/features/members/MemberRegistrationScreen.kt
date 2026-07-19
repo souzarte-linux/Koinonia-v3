@@ -1,5 +1,6 @@
 package com.koinonia.igreja.presentation.features.members
 
+import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
@@ -13,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +42,8 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -225,26 +230,42 @@ fun ExpandableSection(
     }
 }
 
-// Helper para cálculo da idade baseado na data de nascimento
-fun calculateAge(birthDate: Date?): Int? {
-    if (birthDate == null) return null
-    val birthCal = java.util.Calendar.getInstance().apply { time = birthDate }
-    val todayCal = java.util.Calendar.getInstance()
-    var age = todayCal.get(java.util.Calendar.YEAR) - birthCal.get(java.util.Calendar.YEAR)
-    if (todayCal.get(java.util.Calendar.DAY_OF_YEAR) < birthCal.get(java.util.Calendar.DAY_OF_YEAR)) {
-        age--
-    }
-    return age
-}
-
 @Composable
 fun PersonalSection(viewModel: MemberRegistrationViewModel) {
     val fullName by viewModel.fullName.collectAsState()
     val photoUrl by viewModel.photoUrl.collectAsState()
     val birthDate by viewModel.birthDate.collectAsState()
     val civilStatus by viewModel.civilStatus.collectAsState()
+    val rg by viewModel.rg.collectAsState()
+    val cpf by viewModel.cpf.collectAsState()
+    val spouseId by viewModel.spouseId.collectAsState()
+    val spouseName by viewModel.spouseName.collectAsState()
+    val isSpouseMember by viewModel.isSpouseMember.collectAsState()
+    val allMembers by viewModel.allMembers.collectAsState()
 
-    // Lançador nativo para selecionar imagens da galeria (Photo Picker)
+    val context = LocalContext.current
+    var showPhotoSourceDialog by remember { mutableStateOf(false) }
+    var showSpouseDialog by remember { mutableStateOf(false) }
+
+    // Launcher para Câmera (Tirar Foto)
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            try {
+                val file = File(context.cacheDir, "temp_camera_photo_${System.currentTimeMillis()}.jpg")
+                val out = FileOutputStream(file)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                out.flush()
+                out.close()
+                viewModel.photoUrl.value = Uri.fromFile(file).toString()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Launcher para Galeria (Selecionar Foto)
     val pickMediaLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -261,12 +282,39 @@ fun PersonalSection(viewModel: MemberRegistrationViewModel) {
         // Foto de Perfil com suporte real à exibição da imagem selecionada
         PhotoUploadPlaceholder(
             photoUrl = photoUrl,
-            onClick = {
-                pickMediaLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            }
+            onClick = { showPhotoSourceDialog = true }
         )
+
+        // Diálogo para escolha de origem da Foto (Câmera vs Galeria)
+        if (showPhotoSourceDialog) {
+            AlertDialog(
+                onDismissRequest = { showPhotoSourceDialog = false },
+                title = { Text("Selecione a Origem") },
+                text = { Text("Deseja tirar uma foto com a câmera ou escolher uma foto da galeria do aparelho?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showPhotoSourceDialog = false
+                            cameraLauncher.launch(null)
+                        }
+                    ) {
+                        Text("Câmera")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showPhotoSourceDialog = false
+                            pickMediaLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+                    ) {
+                        Text("Galeria")
+                    }
+                }
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -277,6 +325,31 @@ fun PersonalSection(viewModel: MemberRegistrationViewModel) {
             placeholder = { Text("Digite o nome completo") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        // Campos RG e CPF
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = rg,
+                onValueChange = { viewModel.rg.value = it },
+                label = { Text("RG") },
+                placeholder = { Text("Ex: 12345678") },
+                modifier = Modifier.weight(1f)
+            )
+            OutlinedTextField(
+                value = cpf,
+                onValueChange = { input -> 
+                    viewModel.cpf.value = input.filter { it.isDigit() }.take(11)
+                },
+                label = { Text("CPF") },
+                placeholder = { Text("Ex: 123.456.789-01") },
+                visualTransformation = CpfVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         // Exibe a idade ao lado da data de nascimento se selecionada
         val age = remember(birthDate) { calculateAge(birthDate) }
@@ -312,8 +385,65 @@ fun PersonalSection(viewModel: MemberRegistrationViewModel) {
             label = "Estado Civil",
             options = listOf("Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viúvo(a)", "União Estável"),
             selectedOption = civilStatus,
-            onOptionSelected = { viewModel.civilStatus.value = it }
+            onOptionSelected = { selected ->
+                viewModel.civilStatus.value = selected
+                if (selected == "Casado(a)") {
+                    showSpouseDialog = true
+                }
+            }
         )
+
+        // Dialog para Seleção/Digitação de Cônjuge caso Estado Civil seja Casado(a)
+        if (showSpouseDialog && civilStatus == "Casado(a)") {
+            AlertDialog(
+                onDismissRequest = { showSpouseDialog = false },
+                title = { Text("Vincular Cônjuge") },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Checkbox(
+                                checked = !isSpouseMember,
+                                onCheckedChange = { viewModel.isSpouseMember.value = !it }
+                            )
+                            Text("Cônjuge não é membro cadastrado")
+                        }
+
+                        if (isSpouseMember) {
+                            val options = allMembers.map { it.fullName }
+                            val selectedSpouse = allMembers.find { it.id == spouseId }
+                            SimpleDropdownField(
+                                label = "Selecione o Membro",
+                                options = options,
+                                selectedOption = selectedSpouse?.fullName ?: "Nenhum membro selecionado",
+                                onOptionSelected = { name ->
+                                    val found = allMembers.find { it.fullName == name }
+                                    viewModel.spouseId.value = found?.id
+                                }
+                            )
+                        } else {
+                            OutlinedTextField(
+                                value = spouseName,
+                                onValueChange = { viewModel.spouseName.value = it },
+                                label = { Text("Nome do Cônjuge") },
+                                placeholder = { Text("Digite o nome completo do cônjuge") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { showSpouseDialog = false }) {
+                        Text("Confirmar")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -352,9 +482,14 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
                 modifier = Modifier.padding(start = 4.dp)
             ) {
                 Text("WhatsApp", style = MaterialTheme.typography.labelSmall)
+                // Switch com a cor verde do WhatsApp
                 Switch(
                     checked = isWhatsapp,
-                    onCheckedChange = { viewModel.isWhatsapp.value = it }
+                    onCheckedChange = { viewModel.isWhatsapp.value = it },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = Color(0xFF25D366).copy(alpha = 0.5f),
+                        checkedThumbColor = Color(0xFF25D366)
+                    )
                 )
             }
         }
@@ -557,6 +692,12 @@ fun TransportSection(viewModel: MemberRegistrationViewModel) {
 @Composable
 fun ChildrenSection(viewModel: MemberRegistrationViewModel) {
     val childrenList by viewModel.children.collectAsState()
+    val allMembers by viewModel.allMembers.collectAsState()
+    
+    // Filtra membros batizados da igreja para busca
+    val baptizedMembers = remember(allMembers) {
+        allMembers.filter { it.baptismDate != null }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(
@@ -591,12 +732,63 @@ fun ChildrenSection(viewModel: MemberRegistrationViewModel) {
                         }
                     }
 
+                    // Autocompletar e busca assistida por membros batizados
+                    var showSuggestions by remember { mutableStateOf(false) }
+                    val matchingMembers = remember(child.fullName, baptizedMembers) {
+                        if (child.fullName.length >= 3) {
+                            baptizedMembers.filter { it.fullName.contains(child.fullName, ignoreCase = true) }
+                        } else emptyList()
+                    }
+                    val isFound = remember(child.fullName, baptizedMembers) {
+                        baptizedMembers.any { it.fullName.equals(child.fullName, ignoreCase = true) }
+                    }
+
                     OutlinedTextField(
                         value = child.fullName,
-                        onValueChange = { viewModel.updateChild(index, child.copy(fullName = it)) },
+                        onValueChange = { query -> 
+                            viewModel.updateChild(index, child.copy(fullName = query))
+                            showSuggestions = true
+                        },
                         label = { Text("Nome Completo") },
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    // Lista de sugestões abaixo do campo
+                    if (showSuggestions && matchingMembers.isNotEmpty()) {
+                        Surface(
+                            tonalElevation = 8.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 120.dp)
+                        ) {
+                            LazyColumn {
+                                items(matchingMembers) { member ->
+                                    DropdownMenuItem(
+                                        text = { Text("${member.fullName} (${calculateAge(member.birthDate)} anos)") },
+                                        onClick = {
+                                            viewModel.updateChild(
+                                                index,
+                                                child.copy(
+                                                    fullName = member.fullName,
+                                                    birthDate = member.birthDate,
+                                                    isBaptized = true
+                                                )
+                                            )
+                                            showSuggestions = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else if (child.fullName.length >= 3 && !isFound) {
+                        // Aviso caso não seja membro batizado cadastrado
+                        Text(
+                            text = "⚠️ Filho(a) não cadastrado, mas o nome digitado será utilizado no campo.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -963,3 +1155,49 @@ class PhoneVisualTransformation : VisualTransformation {
     }
 }
 
+fun calculateAge(birthDate: Date?): Int? {
+    if (birthDate == null) return null
+    val birth = java.util.Calendar.getInstance().apply { time = birthDate }
+    val today = java.util.Calendar.getInstance()
+    var age = today.get(java.util.Calendar.YEAR) - birth.get(java.util.Calendar.YEAR)
+    if (today.get(java.util.Calendar.DAY_OF_YEAR) < birth.get(java.util.Calendar.DAY_OF_YEAR)) {
+        age--
+    }
+    return age
+}
+
+
+class CpfVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val trimmed = if (text.text.length >= 11) text.text.substring(0, 11) else text.text
+        val out = StringBuilder()
+        
+        for (i in trimmed.indices) {
+            out.append(trimmed[i])
+            if (i == 2 || i == 5) out.append(".")
+            if (i == 8) out.append("-")
+        }
+        
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 0) return 0
+                var transformedOffset = offset
+                if (offset > 2) transformedOffset += 1 // first "."
+                if (offset > 5) transformedOffset += 1 // second "."
+                if (offset > 8) transformedOffset += 1 // "-"
+                return transformedOffset.coerceAtMost(out.length)
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 0) return 0
+                var originalOffset = offset
+                if (offset > 3) originalOffset -= 1
+                if (offset > 7) originalOffset -= 1
+                if (offset > 11) originalOffset -= 1
+                return originalOffset.coerceAtMost(trimmed.length)
+            }
+        }
+        
+        return TransformedText(AnnotatedString(out.toString()), offsetMapping)
+    }
+}
