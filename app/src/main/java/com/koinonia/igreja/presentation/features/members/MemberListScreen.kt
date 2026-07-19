@@ -127,14 +127,14 @@ fun MemberListScreen(
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "WhatsApp",
-                                            tint = Color.Red,
+                                            tint = Color(0xFF25D366),
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
                                         Text(
                                             text = "WhatsApp",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = Color.Red
+                                            color = Color(0xFF25D366)
                                         )
                                     } else {
                                         Icon(
