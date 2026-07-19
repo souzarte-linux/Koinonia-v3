@@ -28,6 +28,12 @@ interface MemberRegistrationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMinistryHistory(history: List<MinistryHistoryEntity>)
 
+    @Query("DELETE FROM children WHERE memberId = :memberId")
+    suspend fun deleteChildrenByMemberId(memberId: String)
+
+    @Query("DELETE FROM ministry_history WHERE memberId = :memberId")
+    suspend fun deleteMinistryHistoryByMemberId(memberId: String)
+
     /**
      * Transação Atômica: Salva o membro e todos os seus relacionamentos de uma só vez.
      */
@@ -36,10 +42,16 @@ interface MemberRegistrationDao {
         newFamily: FamilyEntity?,
         member: MemberEntity,
         children: List<ChildEntity>,
-        ministryHistory: List<MinistryHistoryEntity>
+        ministryHistory: List<MinistryHistoryEntity>,
+        isEdit: Boolean = false
     ) {
         // Se uma nova família foi criada no formulário, salva ela primeiro
         newFamily?.let { insertFamily(it) }
+        
+        if (isEdit) {
+            deleteChildrenByMemberId(member.id)
+            deleteMinistryHistoryByMemberId(member.id)
+        }
         
         insertMember(member)
         

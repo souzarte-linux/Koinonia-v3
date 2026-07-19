@@ -6,17 +6,50 @@ import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.entity.MemberEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
+data class MemberWithMinistry(
+    val member: MemberEntity,
+    val role: String?,
+    val ministry: String?
+)
+
 @HiltViewModel
 class MemberListViewModel @Inject constructor(
     private val memberDao: MemberDao
 ) : ViewModel() {
-    val membersList: Flow<List<MemberEntity>> = memberDao.getAllMembers()
+
+    val searchQuery = MutableStateFlow("")
+
+    val membersList: Flow<List<MemberWithMinistry>> = combine(
+        memberDao.getAllMembers(),
+        memberDao.getAllMinistryHistoriesFlow(),
+        searchQuery
+    ) { members, histories, query ->
+        val filteredMembers = if (query.isBlank()) {
+            members
+        } else {
+            members.filter { it.fullName.contains(query, ignoreCase = true) }
+        }
+
+        filteredMembers.map { member ->
+            val latestHistory = histories.filter { it.memberId == member.id }
+                .sortedByDescending { it.startDate ?: it.createdAt }
+                .firstOrNull()
+            
+            MemberWithMinistry(
+                member = member,
+                role = latestHistory?.role,
+                ministry = latestHistory?.ministryName
+            )
+        }
+    }
 
     init {
         seedDatabaseIfNeeded()
@@ -25,7 +58,8 @@ class MemberListViewModel @Inject constructor(
     private fun seedDatabaseIfNeeded() {
         viewModelScope.launch {
             try {
-                val current = membersList.first()
+                // Usa a lista de membros crua do banco para decidir a semente
+                val current = memberDao.getAllMembers().first()
                 if (current.isEmpty()) {
                     val seedMembers = listOf(
                         MemberEntity(

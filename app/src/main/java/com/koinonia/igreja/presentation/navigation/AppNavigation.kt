@@ -149,7 +149,7 @@ fun AppNavigation(
                         LoginScreen(
                             viewModel = authViewModel,
                             onNavigateToHome = { role ->
-                                val destination = if (role == AppRole.VIEWER) "reports" else "members_list"
+                                val destination = if (role == AppRole.VIEWER) "reports" else "calendar"
                                 navController.navigate(destination) {
                                     popUpTo("login") { inclusive = true }
                                 }
@@ -183,21 +183,41 @@ fun AppNavigation(
                             onMenuClick = {
                                 scope.launch { drawerState.open() }
                             },
+                            onEditMember = { memberId ->
+                                navController.navigate("member_edit/$memberId")
+                            },
                             onNavigateToRegistration = {
                                 navController.navigate("member_add")
                             }
                         )
                     }
 
-                composable("member_add") {
-                    val viewModel: MemberRegistrationViewModel = hiltViewModel()
-                    MemberRegistrationScreen(
-                        viewModel = viewModel,
-                        onNavigateBack = {
-                            navController.popBackStack()
+                    composable("member_add") {
+                        val viewModel: MemberRegistrationViewModel = hiltViewModel()
+                        MemberRegistrationScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+
+                    composable(
+                        route = "member_edit/{memberId}",
+                        arguments = listOf(navArgument("memberId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val memberId = backStackEntry.arguments?.getString("memberId") ?: ""
+                        val viewModel: MemberRegistrationViewModel = hiltViewModel()
+                        LaunchedEffect(memberId) {
+                            viewModel.loadMemberToEdit(memberId)
                         }
-                    )
-                }
+                        MemberRegistrationScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
 
                 composable(
                     route = "member_details/{memberId}",

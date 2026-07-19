@@ -41,6 +41,9 @@ class MemberRegistrationViewModel @Inject constructor(
     private val memberDao: MemberDao
 ) : ViewModel() {
 
+    // Controle de Edição
+    val editingMemberId = MutableStateFlow<String?>(null)
+
     // Estados do Formulário Pessoal
     val fullName = MutableStateFlow("")
     val photoUrl = MutableStateFlow<String?>(null)
@@ -117,6 +120,67 @@ class MemberRegistrationViewModel @Inject constructor(
             try {
                 memberDao.getAllMembers().collect { list ->
                     allMembers.value = list
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun loadMemberToEdit(memberId: String) {
+        editingMemberId.value = memberId
+        viewModelScope.launch {
+            try {
+                val member = memberDao.getMemberById(memberId) ?: return@launch
+                fullName.value = member.fullName
+                photoUrl.value = member.photoUrl
+                birthDate.value = member.birthDate
+                civilStatus.value = member.civilStatus ?: "Solteiro(a)"
+                rg.value = member.rg ?: ""
+                cpf.value = member.cpf ?: ""
+                spouseId.value = member.spouseId
+                spouseName.value = member.spouseName ?: ""
+                phone.value = member.phone ?: ""
+                isWhatsapp.value = member.isWhatsapp
+                socialMedia.value = member.socialMedia ?: ""
+                cep.value = member.cep ?: ""
+                street.value = member.street ?: ""
+                number.value = member.number ?: ""
+                neighborhood.value = member.neighborhood ?: ""
+                city.value = member.city ?: ""
+                state.value = member.state ?: ""
+                complement.value = member.complement ?: ""
+                baptismDate.value = member.baptismDate
+                rebaptismDate.value = member.rebaptismDate
+                hasVehicle.value = member.hasVehicle
+                vehicleType.value = member.vehicleType ?: "CARRO"
+                vehicleModel.value = member.vehicleModel ?: ""
+                isNewFamily.value = false
+                selectedFamilyId.value = member.familyId
+
+                // Carrega filhos vinculados no Room
+                val dbChildren = memberDao.getChildrenByMemberId(memberId)
+                children.value = dbChildren.map {
+                    ChildUiState(
+                        id = it.id,
+                        fullName = it.fullName,
+                        gender = it.gender,
+                        isBaptized = it.isBaptized,
+                        birthDate = it.birthDate
+                    )
+                }
+
+                // Carrega históricos ministeriais
+                val dbMinistries = memberDao.getMinistryHistoryByMemberId(memberId)
+                ministryRoles.value = dbMinistries.map {
+                    MinistryHistoryUiState(
+                        id = it.id,
+                        ministryId = it.ministryId,
+                        ministryName = it.ministryName,
+                        role = it.role,
+                        startDate = it.startDate,
+                        endDate = it.endDate
+                    )
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -216,7 +280,8 @@ class MemberRegistrationViewModel @Inject constructor(
                 } else null
             } else null
 
-            val memberId = UUID.randomUUID().toString()
+            val isEdit = editingMemberId.value != null
+            val memberId = editingMemberId.value ?: UUID.randomUUID().toString()
 
             // Define dados de cônjuge
             val isMarried = civilStatus.value == "Casado(a)"
@@ -289,7 +354,8 @@ class MemberRegistrationViewModel @Inject constructor(
                     newFamily = newFamily,
                     member = newMember,
                     children = childEntities,
-                    ministryHistory = ministryHistoryEntities
+                    ministryHistory = ministryHistoryEntities,
+                    isEdit = isEdit
                 )
                 
                 // Sucesso: dispara atualização do estado para a UI
@@ -301,6 +367,7 @@ class MemberRegistrationViewModel @Inject constructor(
     }
 
     fun resetState() {
+        editingMemberId.value = null
         fullName.value = ""
         photoUrl.value = null
         birthDate.value = null

@@ -5,6 +5,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.koinonia.igreja.data.local.entity.MemberEntity
+import com.koinonia.igreja.data.local.entity.ChildEntity
+import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -32,4 +34,14 @@ interface MemberDao {
 
     @Query("DELETE FROM members WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("SELECT * FROM children WHERE memberId = :memberId")
+    suspend fun getChildrenByMemberId(memberId: String): List<ChildEntity>
+
+    @Query("SELECT * FROM ministry_history WHERE memberId = :memberId")
+    suspend fun getMinistryHistoryByMemberId(memberId: String): List<MinistryHistoryEntity>
+
+    @Query("SELECT * FROM ministry_history")
+    fun getAllMinistryHistoriesFlow(): Flow<List<MinistryHistoryEntity>>
 }
+
