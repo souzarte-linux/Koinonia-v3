@@ -64,6 +64,20 @@ fun AppNavigation(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        navController.navigate("calendar") {
+            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+        }
+    }
+
+    LaunchedEffect(currentRole) {
+        if (currentRole == AppRole.NONE) {
+            navController.navigate("login") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -101,10 +115,12 @@ fun AppNavigation(
                         NavigationBarItem(
                             selected = currentRoute == "reception",
                             onClick = {
-                                navController.navigate("reception") {
-                                    popUpTo("reception") { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (currentRoute != "reception") {
+                                    navController.navigate("reception") {
+                                        popUpTo("calendar") { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             },
                             icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Chamada") },
@@ -113,10 +129,11 @@ fun AppNavigation(
                         NavigationBarItem(
                             selected = currentRoute == "calendar",
                             onClick = {
-                                navController.navigate("calendar") {
-                                    popUpTo("calendar") { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (currentRoute != "calendar") {
+                                    navController.navigate("calendar") {
+                                        popUpTo("calendar") { inclusive = true }
+                                        launchSingleTop = true
+                                    }
                                 }
                             },
                             icon = { Icon(Icons.Default.DateRange, contentDescription = "Agenda") },
@@ -125,10 +142,12 @@ fun AppNavigation(
                         NavigationBarItem(
                             selected = currentRoute == "reports",
                             onClick = {
-                                navController.navigate("reports") {
-                                    popUpTo("reports") { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (currentRoute != "reports") {
+                                    navController.navigate("reports") {
+                                        popUpTo("calendar") { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             },
                             icon = { Icon(Icons.Default.Info, contentDescription = "Métricas") },
@@ -268,8 +287,8 @@ fun AppNavigation(
                         ReceptionScreen(
                             viewModel = viewModel,
                             onBack = {
-                                navController.navigate("members_list") {
-                                    popUpTo("members_list") { inclusive = true }
+                                navController.navigate("calendar") {
+                                    popUpTo("calendar") { inclusive = true }
                                 }
                             }
                         )
@@ -288,8 +307,8 @@ fun AppNavigation(
                     DashboardScreen(
                         viewModel = viewModel,
                         onBack = {
-                            navController.navigate("members_list") {
-                                popUpTo("members_list") { inclusive = true }
+                            navController.navigate("calendar") {
+                                popUpTo("calendar") { inclusive = true }
                             }
                         }
                     )
