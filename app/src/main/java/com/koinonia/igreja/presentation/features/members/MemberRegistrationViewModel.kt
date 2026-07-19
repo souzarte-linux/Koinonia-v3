@@ -2,6 +2,7 @@ package com.koinonia.igreja.presentation.features.members
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.dao.MemberRegistrationDao
 import com.koinonia.igreja.data.local.entity.ChildEntity
 import com.koinonia.igreja.data.local.entity.FamilyEntity
@@ -36,7 +37,8 @@ data class MinistryHistoryUiState(
 
 @HiltViewModel
 class MemberRegistrationViewModel @Inject constructor(
-    private val registrationDao: MemberRegistrationDao
+    private val registrationDao: MemberRegistrationDao,
+    private val memberDao: MemberDao
 ) : ViewModel() {
 
     // Estados do Formulário Pessoal
@@ -44,6 +46,15 @@ class MemberRegistrationViewModel @Inject constructor(
     val photoUrl = MutableStateFlow<String?>(null)
     val birthDate = MutableStateFlow<Date?>(null)
     val civilStatus = MutableStateFlow("Solteiro")
+    
+    // Identificação Civil
+    val rg = MutableStateFlow("")
+    val cpf = MutableStateFlow("")
+    
+    // Estado de Relacionamento (Cônjuge)
+    val spouseId = MutableStateFlow<String?>(null)
+    val spouseName = MutableStateFlow("")
+    val isSpouseMember = MutableStateFlow(true)
     
     // Contato e Localização
     val phone = MutableStateFlow("")
@@ -75,6 +86,9 @@ class MemberRegistrationViewModel @Inject constructor(
     val children = MutableStateFlow<List<ChildUiState>>(emptyList())
     val ministryRoles = MutableStateFlow<List<MinistryHistoryUiState>>(emptyList())
 
+    // Listagem geral de membros da igreja (para busca de cônjuges/filhos)
+    val allMembers = MutableStateFlow<List<MemberEntity>>(emptyList())
+
     // Famílias cadastradas carregadas do banco para seleção
     val families = MutableStateFlow<List<FamilyEntity>>(emptyList())
 
@@ -85,12 +99,25 @@ class MemberRegistrationViewModel @Inject constructor(
     init {
         loadFamilies()
         observeCep()
+        loadAllMembers()
     }
 
     fun loadFamilies() {
         viewModelScope.launch {
             try {
                 families.value = registrationDao.getAllFamilies()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun loadAllMembers() {
+        viewModelScope.launch {
+            try {
+                memberDao.getAllMembers().collect { list ->
+                    allMembers.value = list
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -191,6 +218,17 @@ class MemberRegistrationViewModel @Inject constructor(
 
             val memberId = UUID.randomUUID().toString()
 
+            // Define dados de cônjuge
+            val isMarried = civilStatus.value == "Casado(a)"
+            val finalSpouseId = if (isMarried && isSpouseMember.value) spouseId.value else null
+            val finalSpouseName = if (isMarried) {
+                if (isSpouseMember.value) {
+                    allMembers.value.find { it.id == spouseId.value }?.fullName ?: ""
+                } else {
+                    spouseName.value
+                }
+            } else null
+
             val newMember = MemberEntity(
                 id = memberId,
                 familyId = finalFamilyId,
@@ -210,6 +248,10 @@ class MemberRegistrationViewModel @Inject constructor(
                 civilStatus = civilStatus.value,
                 baptismDate = baptismDate.value,
                 rebaptismDate = rebaptismDate.value,
+                rg = rg.value.ifBlank { null },
+                cpf = cpf.value.ifBlank { null },
+                spouseId = finalSpouseId,
+                spouseName = finalSpouseName,
                 hasVehicle = hasVehicle.value,
                 vehicleType = if (hasVehicle.value) vehicleType.value else null,
                 vehicleModel = if (hasVehicle.value) vehicleModel.value else null,
@@ -263,6 +305,11 @@ class MemberRegistrationViewModel @Inject constructor(
         photoUrl.value = null
         birthDate.value = null
         civilStatus.value = "Solteiro"
+        rg.value = ""
+        cpf.value = ""
+        spouseId.value = null
+        spouseName.value = ""
+        isSpouseMember.value = true
         phone.value = ""
         isWhatsapp.value = false
         socialMedia.value = ""

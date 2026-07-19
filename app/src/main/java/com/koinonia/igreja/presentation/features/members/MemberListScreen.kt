@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -16,12 +17,22 @@ import androidx.compose.ui.Modifier
 @Composable
 fun MemberListScreen(
     onNavigateToRegistration: () -> Unit,
+    onMenuClick: () -> Unit,
     viewModel: MemberListViewModel
 ) {
     val members by viewModel.membersList.collectAsState(initial = emptyList())
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Membros") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Membros") },
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToRegistration) {
                 Icon(Icons.Default.Add, contentDescription = "Adicionar Membro")

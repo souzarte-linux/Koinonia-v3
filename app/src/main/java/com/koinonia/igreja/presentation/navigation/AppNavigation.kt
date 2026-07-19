@@ -3,21 +3,24 @@ package com.koinonia.igreja.presentation.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -58,111 +61,133 @@ fun AppNavigation(
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute != "login" && currentRoute != "forgot_password" && currentRoute != null
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-
-    Scaffold(
-        bottomBar = {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
             if (showBottomBar) {
-                NavigationBar {
-                    NavigationBarItem(
+                ModalDrawerSheet {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Secretaria",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Membros") },
                         selected = currentRoute == "members_list" || currentRoute == "member_add" || currentRoute?.startsWith("member_details") == true,
                         onClick = {
+                            scope.launch { drawerState.close() }
                             navController.navigate("members_list") {
                                 popUpTo("members_list") { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(Icons.Default.Person, contentDescription = "Membros") },
-                        label = { Text("Membros") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == "reception",
-                        onClick = {
-                            navController.navigate("reception") {
-                                popUpTo("members_list") { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Chamada") },
-                        label = { Text("Chamada") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == "calendar",
-                        onClick = {
-                            navController.navigate("calendar") {
-                                popUpTo("members_list") { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.DateRange, contentDescription = "Agenda") },
-                        label = { Text("Agenda") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == "reports",
-                        onClick = {
-                            navController.navigate("reports") {
-                                popUpTo("members_list") { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Info, contentDescription = "Métricas") },
-                        label = { Text("Métricas") }
+                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                 }
             }
-        },
-        modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            NavHost(navController = navController, startDestination = "login") {
-                composable("login") {
-                    LoginScreen(
-                        viewModel = authViewModel,
-                        onNavigateToHome = { role ->
-                            val destination = if (role == AppRole.VIEWER) "reports" else "members_list"
-                            navController.navigate(destination) {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        },
-                        onForgotPasswordClick = {
-                            navController.navigate("forgot_password")
-                        }
-                    )
+        }
+    ) {
+        Scaffold(
+            bottomBar = {
+                if (showBottomBar) {
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = currentRoute == "reception",
+                            onClick = {
+                                navController.navigate("reception") {
+                                    popUpTo("reception") { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Chamada") },
+                            label = { Text("Chamada") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == "calendar",
+                            onClick = {
+                                navController.navigate("calendar") {
+                                    popUpTo("calendar") { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.DateRange, contentDescription = "Agenda") },
+                            label = { Text("Agenda") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == "reports",
+                            onClick = {
+                                navController.navigate("reports") {
+                                    popUpTo("reports") { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Info, contentDescription = "Métricas") },
+                            label = { Text("Métricas") }
+                        )
+                    }
                 }
+            },
+            modifier = modifier.fillMaxSize()
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                NavHost(navController = navController, startDestination = "login") {
+                    composable("login") {
+                        LoginScreen(
+                            viewModel = authViewModel,
+                            onNavigateToHome = { role ->
+                                val destination = if (role == AppRole.VIEWER) "reports" else "members_list"
+                                navController.navigate(destination) {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            },
+                            onForgotPasswordClick = {
+                                navController.navigate("forgot_password")
+                            }
+                        )
+                    }
 
-                composable("forgot_password") {
-                    ForgotPasswordScreen(
-                        viewModel = authViewModel,
-                        onResetSent = {
-                            navController.navigate("login") {
-                                popUpTo("forgot_password") { inclusive = true }
+                    composable("forgot_password") {
+                        ForgotPasswordScreen(
+                            viewModel = authViewModel,
+                            onResetSent = {
+                                navController.navigate("login") {
+                                    popUpTo("forgot_password") { inclusive = true }
+                                }
+                            },
+                            onBackToLogin = {
+                                navController.navigate("login") {
+                                    popUpTo("forgot_password") { inclusive = true }
+                                }
                             }
-                        },
-                        onBackToLogin = {
-                            navController.navigate("login") {
-                                popUpTo("forgot_password") { inclusive = true }
-                            }
-                        }
-                    )
-                }
+                        )
+                    }
 
-                composable("members_list") {
-                    val viewModel: MemberListViewModel = hiltViewModel()
-                    MemberListScreen(
-                        viewModel = viewModel,
-                        onNavigateToRegistration = {
-                            navController.navigate("member_add")
-                        }
-                    )
-                }
+                    composable("members_list") {
+                        val viewModel: MemberListViewModel = hiltViewModel()
+                        MemberListScreen(
+                            viewModel = viewModel,
+                            onMenuClick = {
+                                scope.launch { drawerState.open() }
+                            },
+                            onNavigateToRegistration = {
+                                navController.navigate("member_add")
+                            }
+                        )
+                    }
 
                 composable("member_add") {
                     val viewModel: MemberRegistrationViewModel = hiltViewModel()
@@ -247,3 +272,5 @@ fun AppNavigation(
         }
     }
 }
+}
+
