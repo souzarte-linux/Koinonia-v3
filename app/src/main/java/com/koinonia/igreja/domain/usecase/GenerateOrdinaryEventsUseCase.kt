@@ -46,6 +46,7 @@ class GenerateOrdinaryEventsUseCase @Inject constructor(
                         locationType = LocationType.IGREJA_LOCAL,
                         address = null,
                         ministryId = null,
+                        creatorEmail = null,
                         syncPending = true
                     )
                 )

@@ -18,6 +18,7 @@ data class EventEntity(
     val locationType: LocationType,
     val address: String?,
     val ministryId: String?,
+    val creatorEmail: String?,
     val createdAt: Date = Date(),
     val syncPending: Boolean = true
 )

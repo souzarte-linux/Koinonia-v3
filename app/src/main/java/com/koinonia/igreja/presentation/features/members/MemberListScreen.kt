@@ -1,5 +1,6 @@
 package com.koinonia.igreja.presentation.features.members
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 fun MemberListScreen(
     onNavigateToRegistration: () -> Unit,
     onEditMember: (String) -> Unit,
+    onNavigateToDetails: (String) -> Unit,
     onMenuClick: () -> Unit,
     viewModel: MemberListViewModel
 ) {
@@ -99,7 +101,9 @@ fun MemberListScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToDetails(member.id) }
                 ) {
                     Row(
                         modifier = Modifier

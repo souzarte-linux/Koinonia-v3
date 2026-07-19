@@ -29,5 +29,5 @@ class AppTypeConverters {
 }
 
 // Enums baseados no Supabase
-enum class EventType { ORDINARIO, EXTRAORDINARIO }
+enum class EventType { ORDINARIO, EXTRAORDINARIO, EXTERNO, REUNIAO }
 enum class LocationType { IGREJA_LOCAL, URBANO, EXTERNO }
