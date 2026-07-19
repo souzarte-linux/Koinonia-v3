@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.koinonia.igreja.presentation.features.reception.ReceptionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +33,7 @@ fun FamilyAndVisitorDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 
-                // 1. SEÇÃO DE VISITANTES (NO TOPO)
+                // 1. SEÇÃO DE VISITANTES
                 Card(
                     onClick = { visitorExpanded = !visitorExpanded },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -92,16 +93,25 @@ fun FamilyAndVisitorDialog(
                 // 2. SEÇÃO DE FAMÍLIA
                 Text("Confirmar Família", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
                 
-                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                    items(familyMembers) { relative ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(relative.fullName, modifier = Modifier.weight(1f))
-                            Button(onClick = { viewModel.markPresence(relative) }) {
-                                Text("Presente")
+                if (familyMembers.isEmpty()) {
+                    Text(
+                        text = "Nenhum familiar pendente.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                        items(familyMembers) { relative ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(relative.member.fullName, modifier = Modifier.weight(1f))
+                                Checkbox(
+                                    checked = relative.isPresent,
+                                    onCheckedChange = { viewModel.markPresence(relative.member) }
+                                )
                             }
                         }
                     }
