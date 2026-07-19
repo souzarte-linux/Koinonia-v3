@@ -51,7 +51,11 @@ class MemberRegistrationViewModel @Inject constructor(
     val socialMedia = MutableStateFlow("")
     val cep = MutableStateFlow("")
     val street = MutableStateFlow("")
+    val number = MutableStateFlow("")
     val neighborhood = MutableStateFlow("")
+    val city = MutableStateFlow("")
+    val state = MutableStateFlow("")
+    val complement = MutableStateFlow("")
     
     // Histórico Eclesiástico
     val baptismDate = MutableStateFlow<Date?>(null)
@@ -115,12 +119,20 @@ class MemberRegistrationViewModel @Inject constructor(
                 // Parser de JSON simples e seguro
                 val logradouro = response.substringAfter("\"logradouro\": \"").substringBefore("\"")
                 val bairro = response.substringAfter("\"bairro\": \"").substringBefore("\"")
+                val localidade = response.substringAfter("\"localidade\": \"").substringBefore("\"")
+                val uf = response.substringAfter("\"uf\": \"").substringBefore("\"")
                 
                 if (!logradouro.contains("{") && !logradouro.contains("viacep")) {
                     street.value = logradouro
                 }
                 if (!bairro.contains("{") && !bairro.contains("viacep")) {
                     neighborhood.value = bairro
+                }
+                if (!localidade.contains("{") && !localidade.contains("viacep")) {
+                    city.value = localidade
+                }
+                if (!uf.contains("{") && !uf.contains("viacep")) {
+                    state.value = uf
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -187,7 +199,11 @@ class MemberRegistrationViewModel @Inject constructor(
                 birthDate = birthDate.value,
                 cep = cep.value,
                 street = street.value,
+                number = number.value,
                 neighborhood = neighborhood.value,
+                city = city.value,
+                state = state.value,
+                complement = complement.value.take(400),
                 phone = phone.value,
                 isWhatsapp = isWhatsapp.value,
                 socialMedia = socialMedia.value,
@@ -252,7 +268,11 @@ class MemberRegistrationViewModel @Inject constructor(
         socialMedia.value = ""
         cep.value = ""
         street.value = ""
+        number.value = ""
         neighborhood.value = ""
+        city.value = ""
+        state.value = ""
+        complement.value = ""
         baptismDate.value = null
         rebaptismDate.value = null
         hasVehicle.value = false
