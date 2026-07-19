@@ -79,10 +79,14 @@ fun MemberRegistrationScreen(
 
     Scaffold(
         topBar = {
+            val editingMemberId by viewModel.editingMemberId.collectAsState()
             TopAppBar(
-                title = { Text("Novo Membro") },
+                title = { Text(if (editingMemberId != null) "Editar Membro" else "Novo Membro") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        onNavigateBack()
+                        viewModel.resetState()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar"
