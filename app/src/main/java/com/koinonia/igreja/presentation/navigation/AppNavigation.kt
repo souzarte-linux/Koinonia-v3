@@ -144,7 +144,7 @@ fun AppNavigation(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                NavHost(navController = navController, startDestination = "login") {
+                NavHost(navController = navController, startDestination = "calendar") {
                     composable("login") {
                         LoginScreen(
                             viewModel = authViewModel,
@@ -238,6 +238,9 @@ fun AppNavigation(
                     val viewModel: CalendarViewModel = hiltViewModel()
                     CalendarScreen(
                         viewModel = viewModel,
+                        onMenuClick = {
+                            scope.launch { drawerState.open() }
+                        },
                         onBack = {
                             navController.popBackStack()
                         },
