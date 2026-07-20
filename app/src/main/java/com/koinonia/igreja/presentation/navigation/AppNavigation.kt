@@ -29,6 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.koinonia.igreja.data.repository.AuthResolutionState
 import com.koinonia.igreja.domain.model.AppRole
 import com.koinonia.igreja.presentation.features.auth.AuthState
 import com.koinonia.igreja.presentation.features.auth.AuthViewModel
@@ -56,6 +57,7 @@ fun AppNavigation(
     val navController = rememberNavController()
     val currentRole by authViewModel.currentUserRole.collectAsState()
     val authState by authViewModel.authState.collectAsState()
+    val authResolutionState by authViewModel.authResolutionState.collectAsState()
 
     // Determina a rota atual para exibição da BottomBar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -65,20 +67,32 @@ fun AppNavigation(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(currentRole, currentRoute) {
-        if (currentRole == AppRole.NONE) {
-            if (currentRoute != "login" && currentRoute != "forgot_password") {
+    LaunchedEffect(authResolutionState) {
+        when (val state = authResolutionState) {
+            is AuthResolutionState.LOADING -> {
+                // Do nothing
+            }
+            is AuthResolutionState.UNAUTHENTICATED -> {
                 navController.navigate("login") {
                     popUpTo(0) { inclusive = true }
                 }
             }
-        } else {
-            if (currentRoute == "login" || currentRoute == "forgot_password" || currentRoute == null) {
+            is AuthResolutionState.AUTHENTICATED -> {
                 navController.navigate("calendar") {
                     popUpTo(0) { inclusive = true }
                 }
             }
         }
+    }
+
+    if (authResolutionState is AuthResolutionState.LOADING) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
     }
 
     ModalNavigationDrawer(

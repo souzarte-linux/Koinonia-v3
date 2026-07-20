@@ -30,6 +30,7 @@ class AuthViewModel @Inject constructor(
     val authState = _authState.asStateFlow()
 
     val currentUserRole = authRepository.currentUserRole
+    val authResolutionState = authRepository.authResolutionState
 
     private val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 

@@ -13,23 +13,36 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
+sealed class AuthResolutionState {
+    object LOADING : AuthResolutionState()
+    data class AUTHENTICATED(val role: AppRole) : AuthResolutionState()
+    object UNAUTHENTICATED : AuthResolutionState()
+}
+
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val supabaseClient: SupabaseClient,
-    private val memberDao: dagger.Lazy<com.koinonia.igreja.data.local.dao.MemberDao>
+    private val memberDao: dagger.Lazy<com.koinonia.igreja.data.local.dao.MemberDao>,
+    @com.koinonia.igreja.core.di.ApplicationScope private val applicationScope: kotlinx.coroutines.CoroutineScope
 ) {
     // Mantém o estado da Role em memória para o Navigation Compose consultar de forma reativa
     private val _currentUserRole = MutableStateFlow(AppRole.NONE)
     val currentUserRole: StateFlow<AppRole> = _currentUserRole.asStateFlow()
 
+    private val _authResolutionState = MutableStateFlow<AuthResolutionState>(AuthResolutionState.LOADING)
+    val authResolutionState: StateFlow<AuthResolutionState> = _authResolutionState.asStateFlow()
+
     init {
         val email = getCurrentUserEmail()
         if (email != null) {
-            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
-            kotlinx.coroutines.GlobalScope.launch {
+            applicationScope.launch {
+                _authResolutionState.value = AuthResolutionState.LOADING
                 val role = resolveRoleFromMinistries(email)
                 _currentUserRole.value = role
+                _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             }
+        } else {
+            _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
         }
     }
 
@@ -46,6 +59,7 @@ class AuthRepositoryImpl @Inject constructor(
             
             // 3. Atualiza o estado global
             _currentUserRole.value = role
+            _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             
             Result.success(role)
         } catch (e: Exception) {
@@ -57,6 +71,7 @@ class AuthRepositoryImpl @Inject constructor(
     suspend fun logout() {
         supabaseClient.auth.signOut()
         _currentUserRole.value = AppRole.NONE
+        _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
     }
 
     suspend fun resetPassword(email: String): Result<Unit> {
@@ -95,6 +110,9 @@ class AuthRepositoryImpl @Inject constructor(
 
             if (supabaseClient.auth.currentSessionOrNull() != null) {
                 _currentUserRole.value = role
+                _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
+            } else {
+                _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
             }
             Result.success(role)
         } catch (e: Exception) {
@@ -130,6 +148,7 @@ class AuthRepositoryImpl @Inject constructor(
             }
 
             _currentUserRole.value = role
+            _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             Result.success(role)
         } catch (e: Exception) {
             e.printStackTrace()
