@@ -25,7 +25,9 @@ import javax.inject.Inject
 data class MemberAttendanceState(
     val member: MemberEntity,
     val isPresent: Boolean,
+    val isAbsent: Boolean,
     val isLate: Boolean,
+    val lateDurationMins: Int = 0,
     val arrivalTime: Date? = null
 )
 
@@ -72,7 +74,9 @@ class ReceptionViewModel @Inject constructor(
                     MemberAttendanceState(
                         member = member,
                         isPresent = att != null && !att.isAbsent,
+                        isAbsent = att != null && att.isAbsent,
                         isLate = att?.isLate ?: false,
+                        lateDurationMins = att?.lateDurationMins ?: 0,
                         arrivalTime = att?.arrivalTime
                     )
                 }
@@ -125,59 +129,111 @@ class ReceptionViewModel @Inject constructor(
     }
 
     fun markPresence(member: MemberEntity) {
+        setAttendanceState(member, "PRESENT")
+    }
+
+    fun setAttendanceState(member: MemberEntity, state: String) {
         viewModelScope.launch {
             val eventId = _currentEventId.value ?: return@launch
             val expectedStartTime = _currentEventStartTime.value ?: return@launch
-            
-            // Verifica no banco se já está presente
-            val currentAttendances = attendanceRepository.getAttendanceForEventEntities(eventId).first()
-            val isAlreadyPresent = currentAttendances.any { it.memberId == member.id && !it.isAbsent }
 
-            if (isAlreadyPresent) {
-                // Alterna para desligado: remove a presença do banco
-                attendanceRepository.deletePresence(member.id, eventId)
-                
-                // Atualiza a lista da família no diálogo para manter sincronia visual
-                val updatedStates = currentFamilyMembers.value.map { state ->
-                    if (state.member.id == member.id) {
-                        state.copy(isPresent = false)
-                    } else {
-                        state
-                    }
-                }
-                currentFamilyMembers.value = updatedStates
-            } else {
-                // Alterna para ligado: insere a presença
-                attendanceRepository.markPresence(member.id, eventId, expectedStartTime)
-                
-                // Atualiza a lista da família no diálogo para manter sincronia visual
-                val updatedStates = currentFamilyMembers.value.map { state ->
-                    if (state.member.id == member.id) {
-                        state.copy(isPresent = true)
-                    } else {
-                        state
-                    }
-                }
-                currentFamilyMembers.value = updatedStates
-
-                // Verifica se possui família para acionar o Popup
-                if (member.familyId != null) {
-                    val family = memberDao.getFamilyMembers(member.familyId)
-                    val remainingFamily = family.filter { it.id != member.id }
+            when (state) {
+                "PRESENT" -> {
+                    attendanceRepository.markPresenceManual(member.id, eventId, isAbsent = false, isLate = false, lateDurationMins = 0)
                     
-                    if (remainingFamily.isNotEmpty()) {
-                        val familyStates = remainingFamily.map { relative ->
-                            val att = currentAttendances.firstOrNull { it.memberId == relative.id }
-                            MemberAttendanceState(
-                                member = relative,
-                                isPresent = att != null && !att.isAbsent,
-                                isLate = att?.isLate ?: false,
-                                arrivalTime = att?.arrivalTime
-                            )
+                    val updatedStates = currentFamilyMembers.value.map { st ->
+                        if (st.member.id == member.id) {
+                            st.copy(isPresent = true, isAbsent = false, isLate = false, lateDurationMins = 0)
+                        } else {
+                            st
                         }
-                        currentFamilyMembers.value = familyStates
-                        showFamilyPopup.value = true
                     }
+                    currentFamilyMembers.value = updatedStates
+
+                    // Verifica se possui família para acionar o Popup
+                    if (member.familyId != null && !showFamilyPopup.value) {
+                        val family = memberDao.getFamilyMembers(member.familyId)
+                        val remainingFamily = family.filter { it.id != member.id }
+                        
+                        if (remainingFamily.isNotEmpty()) {
+                            val currentAttendances = attendanceRepository.getAttendanceForEventEntities(eventId).first()
+                            val familyStates = remainingFamily.map { relative ->
+                                val att = currentAttendances.firstOrNull { it.memberId == relative.id }
+                                MemberAttendanceState(
+                                    member = relative,
+                                    isPresent = att != null && !att.isAbsent,
+                                    isAbsent = att != null && att.isAbsent,
+                                    isLate = att?.isLate ?: false,
+                                    lateDurationMins = att?.lateDurationMins ?: 0,
+                                    arrivalTime = att?.arrivalTime
+                                )
+                            }
+                            currentFamilyMembers.value = familyStates
+                            showFamilyPopup.value = true
+                        }
+                    }
+                }
+                "LATE" -> {
+                    val arrivalTime = TimeManager.nowZoned()
+                    val lateMins = TimeManager.calculateLateMinutes(expectedStartTime, arrivalTime)
+                    val finalLateMins = if (lateMins > 0) lateMins else 15
+                    attendanceRepository.markPresenceManual(member.id, eventId, isAbsent = false, isLate = true, lateDurationMins = finalLateMins)
+                    
+                    val updatedStates = currentFamilyMembers.value.map { st ->
+                        if (st.member.id == member.id) {
+                            st.copy(isPresent = true, isAbsent = false, isLate = true, lateDurationMins = finalLateMins)
+                        } else {
+                            st
+                        }
+                    }
+                    currentFamilyMembers.value = updatedStates
+
+                    // Verifica se possui família para acionar o Popup
+                    if (member.familyId != null && !showFamilyPopup.value) {
+                        val family = memberDao.getFamilyMembers(member.familyId)
+                        val remainingFamily = family.filter { it.id != member.id }
+                        
+                        if (remainingFamily.isNotEmpty()) {
+                            val currentAttendances = attendanceRepository.getAttendanceForEventEntities(eventId).first()
+                            val familyStates = remainingFamily.map { relative ->
+                                val att = currentAttendances.firstOrNull { it.memberId == relative.id }
+                                MemberAttendanceState(
+                                    member = relative,
+                                    isPresent = att != null && !att.isAbsent,
+                                    isAbsent = att != null && att.isAbsent,
+                                    isLate = att?.isLate ?: false,
+                                    lateDurationMins = att?.lateDurationMins ?: 0,
+                                    arrivalTime = att?.arrivalTime
+                                )
+                            }
+                            currentFamilyMembers.value = familyStates
+                            showFamilyPopup.value = true
+                        }
+                    }
+                }
+                "ABSENT" -> {
+                    attendanceRepository.markPresenceManual(member.id, eventId, isAbsent = true, isLate = false, lateDurationMins = 0)
+                    
+                    val updatedStates = currentFamilyMembers.value.map { st ->
+                        if (st.member.id == member.id) {
+                            st.copy(isPresent = false, isAbsent = true, isLate = false, lateDurationMins = 0)
+                        } else {
+                            st
+                        }
+                    }
+                    currentFamilyMembers.value = updatedStates
+                }
+                "NONE" -> {
+                    attendanceRepository.deletePresence(member.id, eventId)
+                    
+                    val updatedStates = currentFamilyMembers.value.map { st ->
+                        if (st.member.id == member.id) {
+                            st.copy(isPresent = false, isAbsent = false, isLate = false, lateDurationMins = 0)
+                        } else {
+                            st
+                        }
+                    }
+                    currentFamilyMembers.value = updatedStates
                 }
             }
         }

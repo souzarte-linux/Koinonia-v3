@@ -78,6 +78,31 @@ class AttendanceRepositoryImpl @Inject constructor(
         attendanceDao.deleteAttendance(memberId, eventId)
     }
 
+    suspend fun markPresenceManual(
+        memberId: String,
+        eventId: String,
+        isAbsent: Boolean,
+        isLate: Boolean,
+        lateDurationMins: Int = 0
+    ) {
+        val arrivalTime = if (isAbsent) null else TimeManager.nowZoned()
+        val attendance = AttendanceEntity(
+            memberId = memberId,
+            eventId = eventId,
+            arrivalTime = arrivalTime?.let { TimeManager.toDate(it) },
+            isLate = isLate,
+            lateDurationMins = lateDurationMins,
+            isAbsent = isAbsent,
+            absenceReason = if (isAbsent) "Ausente" else null,
+            absenceReasonDetails = if (isAbsent) "Marcado como ausente manualmente" else null,
+            contactResponsible = null,
+            contactMethod = null,
+            syncPending = true
+        )
+        attendanceDao.insertAttendance(attendance)
+        triggerSync()
+    }
+
     private fun triggerSync() {
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>().build()
         // KEEP garante que se já houver um worker de sync rodando, não criaremos outro atoa.
