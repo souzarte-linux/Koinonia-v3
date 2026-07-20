@@ -18,6 +18,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -113,9 +114,9 @@ fun AppNavigation(
                 if (showBottomBar) {
                     NavigationBar {
                         NavigationBarItem(
-                            selected = currentRoute == "reception",
+                            selected = currentRoute == "reception" || currentRoute?.startsWith("reception") == true,
                             onClick = {
-                                if (currentRoute != "reception") {
+                                if (currentRoute?.startsWith("reception") != true) {
                                     navController.navigate("reception") {
                                         popUpTo("calendar") { saveState = true }
                                         launchSingleTop = true
@@ -308,12 +309,19 @@ fun AppNavigation(
                                 }
                             }
                         )
-                    } else {
+                    } else if (currentRole == AppRole.VIEWER) {
                         // Redirecionamento forçado para painel de visualização se não tiver permissão
                         LaunchedEffect(Unit) {
                             navController.navigate("reports") {
                                 popUpTo("reception") { inclusive = true }
                             }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
                     }
                 }
