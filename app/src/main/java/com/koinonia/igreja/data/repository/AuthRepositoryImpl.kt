@@ -9,16 +9,29 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
-    private val supabaseClient: SupabaseClient
+    private val supabaseClient: SupabaseClient,
+    private val memberDao: dagger.Lazy<com.koinonia.igreja.data.local.dao.MemberDao>
 ) {
     // Mantém o estado da Role em memória para o Navigation Compose consultar de forma reativa
     private val _currentUserRole = MutableStateFlow(AppRole.NONE)
     val currentUserRole: StateFlow<AppRole> = _currentUserRole.asStateFlow()
+
+    init {
+        val email = getCurrentUserEmail()
+        if (email != null) {
+            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+            kotlinx.coroutines.GlobalScope.launch {
+                val role = resolveRoleFromMinistries(email)
+                _currentUserRole.value = role
+            }
+        }
+    }
 
     suspend fun login(email: String, password: String): Result<AppRole> {
         return try {
@@ -28,20 +41,10 @@ class AuthRepositoryImpl @Inject constructor(
                 this.password = password
             }
 
-            // 2. Recupera o ID do usuário autenticado
-            val session = supabaseClient.auth.currentSessionOrNull()
-                ?: throw Exception("Falha ao obter sessão")
-            val userId = session.user?.id ?: throw Exception("Usuário inválido")
-
-            // 3. Busca a Role associada a este usuário na tabela user_roles
-            val roleDto = supabaseClient.postgrest["user_roles"]
-                .select { filter { eq("user_id", userId) } }
-                .decodeSingleOrNull<UserRoleDto>()
-
-            // 4. Mapeia a string do banco para o Enum
-            val role = roleDto?.role?.let { AppRole.valueOf(it) } ?: AppRole.VIEWER
+            // 2. Resolve a role dinamicamente com base no Histórico Ministerial do membro
+            val role = resolveRoleFromMinistries(email)
             
-            // 5. Atualiza o estado global
+            // 3. Atualiza o estado global
             _currentUserRole.value = role
             
             Result.success(role)
@@ -74,25 +77,26 @@ class AuthRepositoryImpl @Inject constructor(
                 this.password = password
             }
 
-            // 2. Recupera o ID do usuário criado a partir do retorno ou do estado atual
             val userId = userInfo?.id 
                 ?: supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Falha ao obter ID do usuário")
 
-            // 3. Atribui uma role padrão de teste (DIACONO) na tabela user_roles
-            val defaultRole = AppRole.DIACONO
+            // 2. Resolve a role dinamicamente
+            val role = resolveRoleFromMinistries(email)
+
+            // 3. Salva a role padrão de teste (DIACONO) na tabela remota apenas para manter sync
             try {
                 supabaseClient.postgrest["user_roles"].insert(
-                    mapOf("user_id" to userId, "role" to defaultRole.name)
+                    mapOf("user_id" to userId, "role" to role.name)
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
             if (supabaseClient.auth.currentSessionOrNull() != null) {
-                _currentUserRole.value = defaultRole
+                _currentUserRole.value = role
             }
-            Result.success(defaultRole)
+            Result.success(role)
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
@@ -103,7 +107,7 @@ class AuthRepositoryImpl @Inject constructor(
         return supabaseClient.auth.currentSessionOrNull() != null
     }
 
-    suspend fun loginWithProvider(provider: io.github.jan.supabase.auth.providers.AuthProvider<*, *>): Result<AppRole> {
+    suspend fun loginWithProvider(provider: io.github.jan.supabase.auth.providers.AuthProvider<*, *>) : Result<AppRole> {
         return try {
             // Realiza login/cadastro social via Supabase Auth
             supabaseClient.auth.signInWith(provider)
@@ -111,22 +115,16 @@ class AuthRepositoryImpl @Inject constructor(
             val session = supabaseClient.auth.currentSessionOrNull()
                 ?: throw Exception("Sessão não iniciada")
             val userId = session.user?.id ?: throw Exception("Usuário inválido")
+            val email = session.user?.email ?: ""
 
-            // Busca a Role associada ou cria uma nova de Diácono para testes
-            var role = AppRole.DIACONO
+            // Resolve a role dinamicamente
+            val role = resolveRoleFromMinistries(email)
+
             try {
-                val roleDto = supabaseClient.postgrest["user_roles"]
-                    .select { filter { eq("user_id", userId) } }
-                    .decodeSingleOrNull<UserRoleDto>()
-
-                if (roleDto != null) {
-                    role = AppRole.valueOf(roleDto.role)
-                } else {
-                    // Cadastra a role de Diácono no banco para ele ter acesso
-                    supabaseClient.postgrest["user_roles"].insert(
-                        mapOf("user_id" to userId, "role" to role.name)
-                    )
-                }
+                // Cadastra a role resolvida no banco remoto para fins de auditoria
+                supabaseClient.postgrest["user_roles"].insert(
+                    mapOf("user_id" to userId, "role" to role.name)
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -141,5 +139,30 @@ class AuthRepositoryImpl @Inject constructor(
 
     fun getCurrentUserEmail(): String? {
         return supabaseClient.auth.currentSessionOrNull()?.user?.email
+    }
+
+    private suspend fun resolveRoleFromMinistries(email: String): AppRole {
+        try {
+            val dao = memberDao.get()
+            val member = dao.getMemberByEmail(email) ?: return AppRole.VIEWER
+            val ministries = dao.getMinistryHistoryByMemberId(member.id)
+            
+            val activeMinistries = ministries.filter { it.endDate == null }
+            
+            val hasAdminRole = activeMinistries.any { min ->
+                val roleUpper = min.role.uppercase()
+                roleUpper.contains("PASTOR") || roleUpper.contains("ANCIÃO") || roleUpper.contains("ANCIAO") || roleUpper.contains("ADMIN") || roleUpper.contains("ADM")
+            }
+            if (hasAdminRole) return AppRole.ADMIN
+
+            val hasDiaconoRole = activeMinistries.any { min ->
+                val roleUpper = min.role.uppercase()
+                roleUpper.contains("DIÁCONO") || roleUpper.contains("DIACONO") || roleUpper.contains("LÍDER") || roleUpper.contains("LIDER") || roleUpper.contains("DIRETOR") || roleUpper.contains("COORDENADOR")
+            }
+            if (hasDiaconoRole) return AppRole.DIACONO
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return AppRole.VIEWER
     }
 }

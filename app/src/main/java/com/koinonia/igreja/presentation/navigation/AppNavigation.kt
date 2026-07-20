@@ -65,16 +65,18 @@ fun AppNavigation(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        navController.navigate("calendar") {
-            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-        }
-    }
-
-    LaunchedEffect(currentRole) {
+    LaunchedEffect(currentRole, currentRoute) {
         if (currentRole == AppRole.NONE) {
-            navController.navigate("login") {
-                popUpTo("login") { inclusive = true }
+            if (currentRoute != "login" && currentRoute != "forgot_password") {
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else {
+            if (currentRoute == "login" || currentRoute == "forgot_password" || currentRoute == null) {
+                navController.navigate("calendar") {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
     }
