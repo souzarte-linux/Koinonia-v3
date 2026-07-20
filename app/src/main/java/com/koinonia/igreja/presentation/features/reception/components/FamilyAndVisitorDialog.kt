@@ -3,13 +3,17 @@ package com.koinonia.igreja.presentation.features.reception.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.koinonia.igreja.presentation.features.reception.ReceptionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,16 +106,75 @@ fun FamilyAndVisitorDialog(
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                         items(familyMembers) { relative ->
+                            val member = relative.member
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(relative.member.fullName, modifier = Modifier.weight(1f))
-                                Checkbox(
-                                    checked = relative.isPresent,
-                                    onCheckedChange = { viewModel.markPresence(relative.member) }
-                                )
+                                Text(member.fullName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Botão Presente Pontual (Verde)
+                                    IconButton(
+                                        onClick = {
+                                            if (relative.isPresent && !relative.isLate) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "PRESENT")
+                                            }
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Presente Pontual",
+                                            tint = if (relative.isPresent && !relative.isLate) Color(0xFF2E7D32) else Color.LightGray,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    // Botão Presente com Atraso (Laranja)
+                                    IconButton(
+                                        onClick = {
+                                            if (relative.isPresent && relative.isLate) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "LATE")
+                                            }
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Schedule,
+                                            contentDescription = "Atrasado",
+                                            tint = if (relative.isPresent && relative.isLate) Color(0xFFEF6C00) else Color.LightGray,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    // Botão Ausente (Vermelho)
+                                    IconButton(
+                                        onClick = {
+                                            if (relative.isAbsent) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "ABSENT")
+                                            }
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Ausente",
+                                            tint = if (relative.isAbsent) Color(0xFFC62828) else Color.LightGray,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
