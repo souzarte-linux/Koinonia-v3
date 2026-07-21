@@ -20,6 +20,7 @@ import com.koinonia.igreja.data.local.entity.FamilyEntity
 import com.koinonia.igreja.data.local.entity.MemberEntity
 import com.koinonia.igreja.data.local.entity.MinistryEntity
 import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
+import com.koinonia.igreja.data.local.entity.MinistryRoleEntity
 import com.koinonia.igreja.data.local.entity.VisitorEntity
 
 @Database(
@@ -31,9 +32,10 @@ import com.koinonia.igreja.data.local.entity.VisitorEntity
         FamilyEntity::class,
         ChildEntity::class,
         MinistryHistoryEntity::class,
-        MinistryEntity::class
+        MinistryEntity::class,
+        MinistryRoleEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -151,6 +153,36 @@ abstract class AppDatabase : RoomDatabase() {
 
                 // 3. Migrate existing email data: copy socialMedia values that match an email format
                 db.execSQL("UPDATE members SET email = socialMedia WHERE socialMedia LIKE '%@%'")
+            }
+        }
+
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Create table ministry_roles
+                db.execSQL("CREATE TABLE IF NOT EXISTS ministry_roles (id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, tier TEXT NOT NULL)")
+
+                // 2. Pre-populate default IASD roles
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_diretor', 'Diretor(a)', 'DIRECTOR')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_diretor_assoc', 'Diretor(a) Associado(a) / Vice-Diretor(a)', 'DIRECTOR')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_coordenador', 'Coordenador(a)', 'DIRECTOR')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_lider', 'Líder', 'DIRECTOR')")
+
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_tesoureiro', 'Tesoureiro(a)', 'TREASURY')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_sec_tesoureiro', 'Secretário(a)-Tesoureiro(a)', 'TREASURY')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_sec_tesoureiro_assoc', 'Secretário(a)-Tesoureiro(a) Associado(a)', 'TREASURY')")
+
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_secretario', 'Secretário(a)', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_secretario_assoc', 'Secretário(a) Associado(a)', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_conselheiro', 'Conselheiro(a)', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_instrutor', 'Instrutor(a)', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_professor', 'Professor(a)', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_diretor_musica', 'Diretor(a) de Música', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_pianista', 'Pianista/Organista', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_musico', 'Músico(a)', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_diacono', 'Diácono / Diaconisa', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_comissao', 'Membro da Comissão/Conselho', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_colportor', 'Colportor(a)-Evangelista', 'SUPPORT')")
+                db.execSQL("INSERT OR REPLACE INTO ministry_roles (id, title, tier) VALUES ('role_bibliotecario', 'Bibliotecário(a)', 'SUPPORT')")
             }
         }
     }

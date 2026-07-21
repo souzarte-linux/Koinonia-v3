@@ -12,7 +12,11 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -64,6 +68,10 @@ fun AppNavigation(
     val authState by authViewModel.authState.collectAsState()
     val authResolutionState by authViewModel.authResolutionState.collectAsState()
     val directedMinistries by authViewModel.directedMinistries.collectAsState()
+    val memberRegistrationViewModel: MemberRegistrationViewModel = hiltViewModel()
+
+    var showMinistryDialog by remember { mutableStateOf(false) }
+    var showRoleDialog by remember { mutableStateOf(false) }
 
     // Determina a rota atual para exibição da BottomBar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -121,19 +129,41 @@ fun AppNavigation(
 
     val hasDrawer = currentRoute != "login" && currentRoute != "forgot_password" && currentRoute != "change_password" && currentRoute != null && (currentRole.hasFullAccess || currentRole.hasTreasuryAccess)
 
+    if (showMinistryDialog) {
+        val allMinistries by memberRegistrationViewModel.allMinistries.collectAsState(initial = emptyList())
+        com.koinonia.igreja.presentation.features.members.dialog.MinistryRegistrationDialog(
+            allMinistries = allMinistries,
+            onDismiss = { showMinistryDialog = false },
+            onConfirm = { name, parentId, minAge, maxAge, minMembershipMonths, notes ->
+                memberRegistrationViewModel.addMinistry(name, parentId, minAge, maxAge, minMembershipMonths, notes)
+                showMinistryDialog = false
+            }
+        )
+    }
+
+    if (showRoleDialog) {
+        com.koinonia.igreja.presentation.features.members.dialog.RoleRegistrationDialog(
+            onDismiss = { showRoleDialog = false },
+            onConfirm = { title, tier ->
+                memberRegistrationViewModel.addRole(title, tier)
+                showRoleDialog = false
+            }
+        )
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             if (hasDrawer) {
                 ModalDrawerSheet {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Secretaria",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                    )
                     if (currentRole.hasFullAccess) {
+                        Text(
+                            text = "Secretaria",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        )
                         NavigationDrawerItem(
                             label = { Text("Membros") },
                             selected = currentRoute == "members_list" || currentRoute == "member_add" || currentRoute?.startsWith("member_details") == true,
@@ -148,10 +178,36 @@ fun AppNavigation(
                             icon = { Icon(Icons.Default.Person, contentDescription = null) },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
+                        NavigationDrawerItem(
+                            label = { Text("Cadastrar Ministério") },
+                            selected = false,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                showMinistryDialog = true
+                            },
+                            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Cadastrar Cargo") },
+                            selected = false,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                showRoleDialog = true
+                            },
+                            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
                     }
 
                     if (currentRole.hasTreasuryAccess) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Tesouraria",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        )
                         NavigationDrawerItem(
                             label = { Text("Tesouraria") },
                             selected = currentRoute == "treasury",
