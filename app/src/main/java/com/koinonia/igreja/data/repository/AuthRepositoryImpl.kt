@@ -10,6 +10,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,6 +46,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     private val _directedMinistries = MutableStateFlow<List<MinistryDirectorship>>(emptyList())
     val directedMinistries: StateFlow<List<MinistryDirectorship>> = _directedMinistries.asStateFlow()
+
+    private val _isBootstrapAdmin = MutableStateFlow(false)
+    val isBootstrapAdmin: StateFlow<Boolean> = _isBootstrapAdmin.asStateFlow()
 
     init {
         val email = getCurrentUserEmail()
@@ -290,44 +294,79 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    private suspend fun hasAnyActiveAdminInSystem(): Boolean {
+        return try {
+            val dao = memberDao.get()
+            val allHistories = dao.getAllMinistryHistoriesFlow().first()
+            allHistories.filter { it.endDate == null }.any { min ->
+                val r = min.role.uppercase()
+                r.contains("ADMIN") || r.contains("ADM") ||
+                r.contains("PASTOR") ||
+                r.contains("ANCIÃO") || r.contains("ANCIAO") ||
+                r.contains("DIÁCONO") || r.contains("DIACONO")
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * REGRA DE BOOTSTRAP DO PRIMEIRO ADMINISTRADOR:
+     * Esta função resolve o papel funcional (RBAC) do usuário a partir dos cargos em seu histórico ministerial.
+     * Se o usuário ainda não possui nenhum registro/cargo ativo no sistema E o sistema ainda não possui nenhum
+     * administrador funcional (ADMIN, PASTOR, ANCIAO ou DIACONO), concede temporariamente AppRole.ADMIN
+     * para o e-mail BOOTSTRAP_ADMIN_EMAIL (evitando o problema do "ovo e da galinha" no primeiro uso).
+     * Assim que existir ao menos um membro administrativo ativo no banco, esta regra de bootstrap se autodesativa.
+     */
     private suspend fun resolveRoleFromMinistries(email: String): AppRole {
+        _isBootstrapAdmin.value = false
         try {
             val dao = memberDao.get()
-            val member = dao.getMemberByEmail(email) ?: return AppRole.VIEWER
-            val ministries = dao.getMinistryHistoryByMemberId(member.id)
-            
-            val activeMinistries = ministries.filter { it.endDate == null }
-            
-            val hasPastorRole = activeMinistries.any { min ->
-                min.role.uppercase().contains("PASTOR")
-            }
-            if (hasPastorRole) return AppRole.PASTOR
+            val member = dao.getMemberByEmail(email)
+            if (member != null) {
+                val ministries = dao.getMinistryHistoryByMemberId(member.id)
+                val activeMinistries = ministries.filter { it.endDate == null }
 
-            val hasAnciaoRole = activeMinistries.any { min ->
-                val roleUpper = min.role.uppercase()
-                roleUpper.contains("ANCIÃO") || roleUpper.contains("ANCIAO")
-            }
-            if (hasAnciaoRole) return AppRole.ANCIAO
+                val hasPastorRole = activeMinistries.any { min ->
+                    min.role.uppercase().contains("PASTOR")
+                }
+                if (hasPastorRole) return AppRole.PASTOR
 
-            val hasAdminRole = activeMinistries.any { min ->
-                val roleUpper = min.role.uppercase()
-                roleUpper.contains("ADMIN") || roleUpper.contains("ADM")
-            }
-            if (hasAdminRole) return AppRole.ADMIN
+                val hasAnciaoRole = activeMinistries.any { min ->
+                    val roleUpper = min.role.uppercase()
+                    roleUpper.contains("ANCIÃO") || roleUpper.contains("ANCIAO")
+                }
+                if (hasAnciaoRole) return AppRole.ANCIAO
 
-            val hasDiaconoRole = activeMinistries.any { min ->
-                val roleUpper = min.role.uppercase()
-                roleUpper.contains("DIÁCONO") || roleUpper.contains("DIACONO") || roleUpper.contains("LÍDER") || roleUpper.contains("LIDER") || roleUpper.contains("DIRETOR") || roleUpper.contains("COORDENADOR")
-            }
-            if (hasDiaconoRole) return AppRole.DIACONO
+                val hasAdminRole = activeMinistries.any { min ->
+                    val roleUpper = min.role.uppercase()
+                    roleUpper.contains("ADMIN") || roleUpper.contains("ADM")
+                }
+                if (hasAdminRole) return AppRole.ADMIN
 
-            val hasTesoureiroRole = activeMinistries.any { min ->
-                min.role.uppercase().contains("TESOUREIRO")
+                val hasDiaconoRole = activeMinistries.any { min ->
+                    val roleUpper = min.role.uppercase()
+                    roleUpper.contains("DIÁCONO") || roleUpper.contains("DIACONO") || roleUpper.contains("LÍDER") || roleUpper.contains("LIDER") || roleUpper.contains("DIRETOR") || roleUpper.contains("COORDENADOR")
+                }
+                if (hasDiaconoRole) return AppRole.DIACONO
+
+                val hasTesoureiroRole = activeMinistries.any { min ->
+                    min.role.uppercase().contains("TESOUREIRO")
+                }
+                if (hasTesoureiroRole) return AppRole.TESOUREIRO
             }
-            if (hasTesoureiroRole) return AppRole.TESOUREIRO
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        // Verificação de Bootstrap Seguro do Primeiro Administrador
+        if (email.trim().equals(com.koinonia.igreja.core.util.Constants.BOOTSTRAP_ADMIN_EMAIL, ignoreCase = true)) {
+            if (!hasAnyActiveAdminInSystem()) {
+                _isBootstrapAdmin.value = true
+                return AppRole.ADMIN
+            }
+        }
+
         return AppRole.VIEWER
     }
 }

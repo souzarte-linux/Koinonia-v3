@@ -32,6 +32,7 @@ class AuthViewModel @Inject constructor(
     val currentUserRole = authRepository.currentUserRole
     val authResolutionState = authRepository.authResolutionState
     val directedMinistries = authRepository.directedMinistries
+    val isBootstrapAdmin = authRepository.isBootstrapAdmin
 
     private val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
