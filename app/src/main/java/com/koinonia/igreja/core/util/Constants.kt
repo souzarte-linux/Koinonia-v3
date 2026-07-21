@@ -13,4 +13,7 @@ object Constants {
     const val TABLE_MEMBERS = "members"
     const val TABLE_EVENTS = "events"
     const val TABLE_ATTENDANCE = "attendance"
+
+    // E-mail seguro para Bootstrap do primeiro Administrador
+    const val BOOTSTRAP_ADMIN_EMAIL = "cyber.souza@hotmail.com"
 }

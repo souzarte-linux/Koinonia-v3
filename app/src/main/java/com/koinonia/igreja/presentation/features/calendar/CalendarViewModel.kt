@@ -39,6 +39,7 @@ class CalendarViewModel @Inject constructor(
 
     val currentUserRole = authRepository.currentUserRole
     val directedMinistries = authRepository.directedMinistries
+    val isBootstrapAdmin = authRepository.isBootstrapAdmin
     val ministriesList = ministryDao.getAllMinistries()
 
     fun getCurrentUserEmail(): String? = authRepository.getCurrentUserEmail()

@@ -59,53 +59,50 @@ class MemberListViewModel @Inject constructor(
     private fun seedDatabaseIfNeeded() {
         viewModelScope.launch {
             try {
-                val current = memberDao.getAllMembers().first()
-                val hasFernando = current.any { it.email == "cyber.souza@hotmail.com" || it.socialMedia == "cyber.souza@hotmail.com" }
-                if (!hasFernando) {
-                    val fernandoMember = MemberEntity(
-                        id = "seed_member_fernando",
-                        familyId = null,
-                        fullName = "Fernando Anunciação de Souza",
-                        photoUrl = null,
-                        birthDate = Date(85, 0, 1),
-                        cep = "40000000",
-                        street = "Avenida Sete de Setembro",
-                        number = "100",
-                        neighborhood = "Centro",
-                        city = "Salvador",
-                        state = "BA",
-                        complement = null,
-                        phone = "5571988887777",
-                        isWhatsapp = true,
-                        socialMedia = "cyber.souza@hotmail.com",
-                        email = "cyber.souza@hotmail.com",
-                        civilStatus = "Casado(a)",
-                        baptismDate = Date(100, 0, 1),
-                        rebaptismDate = null,
-                        rg = "1234567",
-                        cpf = "12345678900",
-                        spouseId = null,
-                        spouseName = null,
-                        hasVehicle = true,
-                        vehicleType = "CARRO",
-                        vehicleModel = null,
+                val fernandoMember = MemberEntity(
+                    id = "seed_member_fernando",
+                    familyId = null,
+                    fullName = "Fernando Anunciação de Souza",
+                    photoUrl = null,
+                    birthDate = Date(85, 0, 1),
+                    cep = "40000000",
+                    street = "Avenida Sete de Setembro",
+                    number = "100",
+                    neighborhood = "Centro",
+                    city = "Salvador",
+                    state = "BA",
+                    complement = null,
+                    phone = "5571982030433",
+                    isWhatsapp = true,
+                    socialMedia = "cyber.souza@hotmail.com",
+                    email = "cyber.souza@hotmail.com",
+                    civilStatus = "Casado(a)",
+                    baptismDate = Date(100, 0, 1),
+                    rebaptismDate = null,
+                    rg = "1234567",
+                    cpf = "12345678900",
+                    spouseId = null,
+                    spouseName = null,
+                    hasVehicle = true,
+                    vehicleType = "CARRO",
+                    vehicleModel = null,
+                    syncPending = false
+                )
+                memberDao.insertMembers(listOf(fernandoMember))
+                memberDao.insertMinistryHistories(listOf(
+                    MinistryHistoryEntity(
+                        id = "seed_history_fernando_anciao",
+                        memberId = "seed_member_fernando",
+                        ministryId = "diaconato",
+                        ministryName = "Diaconato",
+                        role = "Ancião",
+                        startDate = Date(120, 0, 1),
+                        endDate = null,
                         syncPending = false
                     )
-                    memberDao.insertMembers(listOf(fernandoMember))
-                    memberDao.insertMinistryHistories(listOf(
-                        MinistryHistoryEntity(
-                            id = "seed_history_fernando_diacono",
-                            memberId = "seed_member_fernando",
-                            ministryId = "diaconato",
-                            ministryName = "Diaconato",
-                            role = "Diácono / Diaconisa",
-                            startDate = Date(120, 0, 1),
-                            endDate = null,
-                            syncPending = false
-                        )
-                    ))
-                }
+                ))
 
+                val current = memberDao.getAllMembers().first()
                 if (current.isEmpty()) {
                     val seedMembers = listOf(
                         MemberEntity(

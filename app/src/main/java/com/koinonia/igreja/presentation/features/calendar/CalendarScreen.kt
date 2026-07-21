@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -52,6 +53,7 @@ fun CalendarScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val events by viewModel.events.collectAsState(initial = emptyList())
     val currentRole by viewModel.currentUserRole.collectAsState(initial = AppRole.NONE)
+    val isBootstrapAdmin by viewModel.isBootstrapAdmin.collectAsState()
     val currentUserEmail = remember { viewModel.getCurrentUserEmail() }
     val directedMinistries by viewModel.directedMinistries.collectAsState(initial = emptyList())
     val ministriesList by viewModel.ministriesList.collectAsState(initial = emptyList())
@@ -348,6 +350,33 @@ fun CalendarScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            if (isBootstrapAdmin) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Acesso administrativo temporário de configuração inicial. Complete seu cadastro de Membro com um cargo de ADM/Pastor/Ancião/Diácono para manter o acesso permanente.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+            }
             
             // Seletor de Mês e Ano
             Row(
