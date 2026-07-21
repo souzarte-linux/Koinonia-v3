@@ -69,12 +69,41 @@ class AuthRepositoryImpl @Inject constructor(
         if (input.contains("@")) {
             return input.trim()
         }
-        val digits = input.filter { it.isDigit() }
+        val rawDigits = input.filter { it.isDigit() }
+        val digits = if (rawDigits.isNotBlank()) {
+            if (rawDigits.startsWith("55") && (rawDigits.length == 12 || rawDigits.length == 13)) {
+                rawDigits
+            } else if (rawDigits.length == 10 || rawDigits.length == 11) {
+                "55$rawDigits"
+            } else {
+                rawDigits
+            }
+        } else ""
+
         if (digits.isNotBlank()) {
+            // 1. Busca local
             val member = memberDao.get().getMemberByPhone(digits)
             if (member != null && member.email != null) {
                 return member.email
             }
+
+            // 2. Busca remota no Supabase Postgrest (Aparelho novo/Sincronização pendente)
+            try {
+                val remoteMember = supabaseClient.postgrest["members"]
+                    .select {
+                        filter {
+                            eq("phone", digits)
+                        }
+                    }
+                    .decodeSingleOrNull<com.koinonia.igreja.data.remote.MemberDto>()
+                if (remoteMember != null && remoteMember.email.isNotBlank()) {
+                    return remoteMember.email
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // 3. E-mail técnico fallback
             return "$digits@membros.koinonia.app"
         }
         return input.trim()
