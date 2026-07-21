@@ -46,5 +46,8 @@ interface MemberDao {
 
     @Query("SELECT * FROM ministry_history")
     fun getAllMinistryHistoriesFlow(): Flow<List<MinistryHistoryEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMinistryHistories(histories: List<MinistryHistoryEntity>)
 }
 

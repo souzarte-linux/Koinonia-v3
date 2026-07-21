@@ -224,7 +224,7 @@ fun MemberDetailScreen(
                             }
                         }
 
-                        DetailRow(label = "Rede Social (@)", value = currentMember.socialMedia?.ifEmpty { "Não informado" } ?: "Não informado")
+                        DetailRow(label = "E-mail", value = currentMember.socialMedia?.ifEmpty { "Não informado" } ?: "Não informado")
                         
                         DetailRow(
                             label = "Endereço Completo",
