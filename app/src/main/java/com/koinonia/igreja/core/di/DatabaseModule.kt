@@ -10,6 +10,7 @@ import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.dao.MemberRegistrationDao
 import com.koinonia.igreja.data.local.dao.ReportsDao
 import com.koinonia.igreja.data.local.dao.VisitorDao
+import com.koinonia.igreja.data.local.dao.MinistryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,6 +30,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "koinonia_database"
         )
+        .addMigrations(AppDatabase.MIGRATION_6_7)
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -43,6 +45,12 @@ object DatabaseModule {
     @Singleton
     fun provideAttendanceDao(database: AppDatabase): AttendanceDao {
         return database.attendanceDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMinistryDao(database: AppDatabase): MinistryDao {
+        return database.ministryDao()
     }
 
     @Provides

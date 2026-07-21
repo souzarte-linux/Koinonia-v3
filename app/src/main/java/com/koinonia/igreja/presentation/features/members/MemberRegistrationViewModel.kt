@@ -38,8 +38,22 @@ data class MinistryHistoryUiState(
 @HiltViewModel
 class MemberRegistrationViewModel @Inject constructor(
     private val registrationDao: MemberRegistrationDao,
-    private val memberDao: MemberDao
+    private val memberDao: MemberDao,
+    private val ministryDao: com.koinonia.igreja.data.local.dao.MinistryDao
 ) : ViewModel() {
+
+    val allMinistries = ministryDao.getAllMinistries()
+
+    val roleOptions = listOf(
+        // DIRECTOR
+        "Diretor(a)", "Diretor(a) Associado(a) / Vice-Diretor(a)", "Coordenador(a)", "Líder",
+        // TREASURY
+        "Tesoureiro(a)", "Secretário(a)-Tesoureiro(a)", "Secretário(a)-Tesoureiro(a) Associado(a)",
+        // SUPPORT
+        "Secretário(a)", "Secretário(a) Associado(a)", "Conselheiro(a)", "Instrutor(a)", "Professor(a)", 
+        "Diretor(a) de Música", "Pianista/Organista", "Músico(a)", "Diácono / Diaconisa", 
+        "Membro da Comissão/Conselho", "Colportor(a)-Evangelista", "Bibliotecário(a)"
+    )
 
     // Controle de Edição
     val editingMemberId = MutableStateFlow<String?>(null)

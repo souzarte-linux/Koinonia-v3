@@ -3,6 +3,7 @@ package com.koinonia.igreja.presentation.features.calendar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.koinonia.igreja.data.local.dao.EventDao
+import com.koinonia.igreja.data.local.dao.MinistryDao
 import com.koinonia.igreja.data.local.entity.EventEntity
 import com.koinonia.igreja.data.local.converter.EventType
 import com.koinonia.igreja.data.local.converter.LocationType
@@ -25,6 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val eventDao: EventDao,
+    private val ministryDao: MinistryDao,
     private val generateOrdinaryEventsUseCase: GenerateOrdinaryEventsUseCase,
     private val authRepository: AuthRepositoryImpl
 ) : ViewModel() {
@@ -36,6 +38,8 @@ class CalendarViewModel @Inject constructor(
     val events: Flow<List<EventEntity>> = eventDao.getAllEvents()
 
     val currentUserRole = authRepository.currentUserRole
+    val directedMinistries = authRepository.directedMinistries
+    val ministriesList = ministryDao.getAllMinistries()
 
     fun getCurrentUserEmail(): String? = authRepository.getCurrentUserEmail()
 
@@ -48,6 +52,30 @@ class CalendarViewModel @Inject constructor(
 
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
+    }
+
+    suspend fun hasOrdinaryConflict(date: LocalDate, time: String, eventIdToIgnore: String? = null): Boolean {
+        return try {
+            val parsedTime = LocalTime.parse(time)
+            val zoneId = ZoneId.of("America/Bahia")
+            val targetStart = ZonedDateTime.of(date, parsedTime, zoneId)
+            val targetEnd = targetStart.plusHours(2)
+
+            val startMillis = targetStart.toInstant().toEpochMilli()
+            val endMillis = targetEnd.toInstant().toEpochMilli()
+
+            val ordinaryEvents = eventDao.getOrdinaryEventsSync()
+            ordinaryEvents.any { ord ->
+                if (ord.id == eventIdToIgnore) return@any false
+                val ordStart = ord.startTime.time
+                val ordEnd = ord.endTime.time
+                // Verifica sobreposição de intervalos: (startA < endB && endA > startB)
+                startMillis < ordEnd && endMillis > ordStart
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
     fun addEvent(

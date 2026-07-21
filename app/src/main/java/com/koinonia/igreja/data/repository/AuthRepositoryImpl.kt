@@ -2,6 +2,7 @@ package com.koinonia.igreja.data.repository
 
 import com.koinonia.igreja.data.remote.dto.UserRoleDto
 import com.koinonia.igreja.domain.model.AppRole
+import com.koinonia.igreja.domain.model.MinistryDirectorship
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -19,10 +20,16 @@ sealed class AuthResolutionState {
     object UNAUTHENTICATED : AuthResolutionState()
 }
 
+/**
+ * DUAS CAMADAS DE CONTROLE DE ACESSO (RBAC / OBAC):
+ * (a) Papel global (AppRole): Dá poder total (hasFullAccess) ou acesso restrito à Tesouraria (hasTreasuryAccess).
+ * (b) Diretoria de ministério (directedMinistries): Dá poder apenas sobre eventos vinculados a ministérios dirigidos.
+ */
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val supabaseClient: SupabaseClient,
     private val memberDao: dagger.Lazy<com.koinonia.igreja.data.local.dao.MemberDao>,
+    private val getMinistryDirectorshipsUseCase: dagger.Lazy<com.koinonia.igreja.domain.usecase.GetMinistryDirectorshipsUseCase>,
     @com.koinonia.igreja.core.di.ApplicationScope private val applicationScope: kotlinx.coroutines.CoroutineScope
 ) {
     // Mantém o estado da Role em memória para o Navigation Compose consultar de forma reativa
@@ -32,6 +39,9 @@ class AuthRepositoryImpl @Inject constructor(
     private val _authResolutionState = MutableStateFlow<AuthResolutionState>(AuthResolutionState.LOADING)
     val authResolutionState: StateFlow<AuthResolutionState> = _authResolutionState.asStateFlow()
 
+    private val _directedMinistries = MutableStateFlow<List<MinistryDirectorship>>(emptyList())
+    val directedMinistries: StateFlow<List<MinistryDirectorship>> = _directedMinistries.asStateFlow()
+
     init {
         val email = getCurrentUserEmail()
         if (email != null) {
@@ -39,6 +49,11 @@ class AuthRepositoryImpl @Inject constructor(
                 _authResolutionState.value = AuthResolutionState.LOADING
                 val role = resolveRoleFromMinistries(email)
                 _currentUserRole.value = role
+                
+                // Busca as diretorias ativas do membro
+                val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
+                _directedMinistries.value = directorships
+                
                 _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             }
         } else {
@@ -56,9 +71,11 @@ class AuthRepositoryImpl @Inject constructor(
 
             // 2. Resolve a role dinamicamente com base no Histórico Ministerial do membro
             val role = resolveRoleFromMinistries(email)
+            val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
             
             // 3. Atualiza o estado global
             _currentUserRole.value = role
+            _directedMinistries.value = directorships
             _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             
             Result.success(role)
@@ -71,6 +88,7 @@ class AuthRepositoryImpl @Inject constructor(
     suspend fun logout() {
         supabaseClient.auth.signOut()
         _currentUserRole.value = AppRole.NONE
+        _directedMinistries.value = emptyList()
         _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
     }
 
@@ -98,6 +116,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             // 2. Resolve a role dinamicamente
             val role = resolveRoleFromMinistries(email)
+            val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
 
             // 3. Salva a role padrão de teste (DIACONO) na tabela remota apenas para manter sync
             try {
@@ -110,6 +129,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             if (supabaseClient.auth.currentSessionOrNull() != null) {
                 _currentUserRole.value = role
+                _directedMinistries.value = directorships
                 _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             } else {
                 _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
@@ -137,6 +157,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             // Resolve a role dinamicamente
             val role = resolveRoleFromMinistries(email)
+            val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
 
             try {
                 // Cadastra a role resolvida no banco remoto para fins de auditoria
@@ -148,6 +169,7 @@ class AuthRepositoryImpl @Inject constructor(
             }
 
             _currentUserRole.value = role
+            _directedMinistries.value = directorships
             _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             Result.success(role)
         } catch (e: Exception) {
@@ -168,9 +190,20 @@ class AuthRepositoryImpl @Inject constructor(
             
             val activeMinistries = ministries.filter { it.endDate == null }
             
+            val hasPastorRole = activeMinistries.any { min ->
+                min.role.uppercase().contains("PASTOR")
+            }
+            if (hasPastorRole) return AppRole.PASTOR
+
+            val hasAnciaoRole = activeMinistries.any { min ->
+                val roleUpper = min.role.uppercase()
+                roleUpper.contains("ANCIÃO") || roleUpper.contains("ANCIAO")
+            }
+            if (hasAnciaoRole) return AppRole.ANCIAO
+
             val hasAdminRole = activeMinistries.any { min ->
                 val roleUpper = min.role.uppercase()
-                roleUpper.contains("PASTOR") || roleUpper.contains("ANCIÃO") || roleUpper.contains("ANCIAO") || roleUpper.contains("ADMIN") || roleUpper.contains("ADM")
+                roleUpper.contains("ADMIN") || roleUpper.contains("ADM")
             }
             if (hasAdminRole) return AppRole.ADMIN
 
@@ -179,6 +212,11 @@ class AuthRepositoryImpl @Inject constructor(
                 roleUpper.contains("DIÁCONO") || roleUpper.contains("DIACONO") || roleUpper.contains("LÍDER") || roleUpper.contains("LIDER") || roleUpper.contains("DIRETOR") || roleUpper.contains("COORDENADOR")
             }
             if (hasDiaconoRole) return AppRole.DIACONO
+
+            val hasTesoureiroRole = activeMinistries.any { min ->
+                min.role.uppercase().contains("TESOUREIRO")
+            }
+            if (hasTesoureiroRole) return AppRole.TESOUREIRO
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -501,8 +501,8 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
         OutlinedTextField(
             value = socialMedia,
             onValueChange = { viewModel.socialMedia.value = it },
-            label = { Text("Rede Social (@)") },
-            placeholder = { Text("Ex: instagram") },
+            label = { Text("E-mail de Acesso") },
+            placeholder = { Text("Ex: joao@gmail.com") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -844,26 +844,7 @@ fun ChildrenSection(viewModel: MemberRegistrationViewModel) {
 @Composable
 fun MinistrySection(viewModel: MemberRegistrationViewModel) {
     val ministryRolesList by viewModel.ministryRoles.collectAsState()
-
-    val ministryOptions = listOf(
-        "Louvor e Adoração",
-        "Ensino e Discipulado",
-        "Infantil (Koinoninho)",
-        "Jovens e Adolescentes",
-        "Ação Social",
-        "Comunicação e Mídia",
-        "Diaconato",
-        "Intercessão e Oração"
-    )
-
-    val roleOptions = listOf(
-        "Líder de Ministério",
-        "Vice-Líder",
-        "Integrante",
-        "Apoio Técnico",
-        "Professor",
-        "Diácono / Diaconisa"
-    )
+    val allMinistries by viewModel.allMinistries.collectAsState(initial = emptyList())
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(
@@ -900,16 +881,17 @@ fun MinistrySection(viewModel: MemberRegistrationViewModel) {
 
                     SimpleDropdownField(
                         label = "Ministério",
-                        options = ministryOptions,
+                        options = allMinistries.map { it.name },
                         selectedOption = role.ministryName.ifEmpty { "Selecione o Ministério" },
                         onOptionSelected = { name ->
-                            viewModel.updateMinistryRole(index, role.copy(ministryName = name, ministryId = name))
+                            val matchedId = allMinistries.find { it.name == name }?.id ?: name
+                            viewModel.updateMinistryRole(index, role.copy(ministryName = name, ministryId = matchedId))
                         }
                     )
 
                     SimpleDropdownField(
                         label = "Cargo",
-                        options = roleOptions,
+                        options = viewModel.roleOptions,
                         selectedOption = role.role.ifEmpty { "Selecione o Cargo" },
                         onOptionSelected = { roleName ->
                             viewModel.updateMinistryRole(index, role.copy(role = roleName))

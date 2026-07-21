@@ -38,6 +38,7 @@ import java.time.format.TextStyle
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +53,8 @@ fun CalendarScreen(
     val events by viewModel.events.collectAsState(initial = emptyList())
     val currentRole by viewModel.currentUserRole.collectAsState(initial = AppRole.NONE)
     val currentUserEmail = remember { viewModel.getCurrentUserEmail() }
+    val directedMinistries by viewModel.directedMinistries.collectAsState(initial = emptyList())
+    val ministriesList by viewModel.ministriesList.collectAsState(initial = emptyList())
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var editingEvent by remember { mutableStateOf<EventEntity?>(null) }
@@ -60,8 +63,12 @@ fun CalendarScreen(
     var selectedEventType by remember { mutableStateOf(EventType.EXTRAORDINARIO) }
     var selectedLocationType by remember { mutableStateOf(LocationType.IGREJA_LOCAL) }
     var selectedAddress by remember { mutableStateOf("") }
+    var selectedMinistryId by remember { mutableStateOf<String?>(null) }
+    var dialogError by remember { mutableStateOf<String?>(null) }
 
-    val canCreateEvents = currentRole == AppRole.ADMIN || currentRole == AppRole.DIACONO
+    val scope = rememberCoroutineScope()
+
+    val canCreateEvents = currentRole.hasFullAccess || directedMinistries.isNotEmpty()
 
     val selectedDateEvents = remember(events, selectedDate) {
         events.filter { event ->
@@ -71,11 +78,43 @@ fun CalendarScreen(
     }
 
     if (showCreateDialog) {
+        var menuExpanded by remember { mutableStateOf(false) }
+        val allowedMinistries = remember(currentRole, directedMinistries, ministriesList) {
+            if (currentRole.hasFullAccess) {
+                ministriesList
+            } else {
+                ministriesList.filter { m -> directedMinistries.any { it.ministryId == m.id } }
+            }
+        }
+
+        // Auto-seleciona ministério se for único
+        LaunchedEffect(allowedMinistries) {
+            if (editingEvent == null) {
+                if (!currentRole.hasFullAccess && allowedMinistries.size == 1) {
+                    selectedMinistryId = allowedMinistries.first().id
+                }
+            }
+        }
+
+        val selectedMinistryName = remember(selectedMinistryId, ministriesList) {
+            if (selectedMinistryId == null) "Nenhum / Liderança Geral"
+            else ministriesList.find { it.id == selectedMinistryId }?.name ?: selectedMinistryId!!
+        }
+
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
             title = { Text(if (editingEvent != null) "Editar Evento" else "Novo Evento") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (dialogError != null) {
+                        Text(
+                            text = dialogError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+
                     OutlinedTextField(
                         value = newTitle,
                         onValueChange = { newTitle = it },
@@ -153,6 +192,43 @@ fun CalendarScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
+
+                    // Seleção de Ministério
+                    Column {
+                        Text("Ministério Responsável", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { menuExpanded = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(selectedMinistryName)
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                                modifier = Modifier.fillMaxWidth(0.9f)
+                            ) {
+                                if (currentRole.hasFullAccess) {
+                                    DropdownMenuItem(
+                                        text = { Text("Nenhum / Liderança Geral") },
+                                        onClick = {
+                                            selectedMinistryId = null
+                                            menuExpanded = false
+                                        }
+                                    )
+                                }
+                                allowedMinistries.forEach { min ->
+                                    DropdownMenuItem(
+                                        text = { Text(min.name) },
+                                        onClick = {
+                                            selectedMinistryId = min.id
+                                            menuExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -160,28 +236,60 @@ fun CalendarScreen(
                     onClick = {
                         if (newTitle.isNotBlank()) {
                             val event = editingEvent
-                            if (event != null) {
-                                viewModel.editEvent(
-                                    id = event.id,
-                                    title = newTitle,
-                                    date = selectedDate,
-                                    time = newTime,
-                                    type = selectedEventType,
-                                    locationType = selectedLocationType,
-                                    address = if (selectedLocationType == LocationType.IGREJA_LOCAL) null else selectedAddress,
-                                    creatorEmail = event.creatorEmail
+                            scope.launch {
+                                // Verifica conflito apenas se o evento que está sendo criado/editado não for Ordinário
+                                val hasConflict = if (selectedEventType != EventType.ORDINARIO) {
+                                    viewModel.hasOrdinaryConflict(
+                                        date = selectedDate,
+                                        time = newTime,
+                                        eventIdToIgnore = event?.id
+                                    )
+                                } else {
+                                    false
+                                }
+
+                                val allowed = com.koinonia.igreja.core.util.EventPermissions.canManageEvent(
+                                    event = event,
+                                    targetMinistryId = selectedMinistryId,
+                                    currentRole = currentRole,
+                                    directedMinistries = directedMinistries,
+                                    hasOrdinaryConflict = hasConflict
                                 )
-                            } else {
-                                viewModel.addEvent(
-                                    title = newTitle,
-                                    date = selectedDate,
-                                    time = newTime,
-                                    type = selectedEventType,
-                                    locationType = selectedLocationType,
-                                    address = if (selectedLocationType == LocationType.IGREJA_LOCAL) null else selectedAddress
-                                )
+
+                                if (allowed) {
+                                    if (event != null) {
+                                        viewModel.editEvent(
+                                            id = event.id,
+                                            title = newTitle,
+                                            date = selectedDate,
+                                            time = newTime,
+                                            type = selectedEventType,
+                                            locationType = selectedLocationType,
+                                            address = if (selectedLocationType == LocationType.IGREJA_LOCAL) null else selectedAddress,
+                                            ministryId = selectedMinistryId,
+                                            creatorEmail = event.creatorEmail
+                                        )
+                                    } else {
+                                        viewModel.addEvent(
+                                            title = newTitle,
+                                            date = selectedDate,
+                                            time = newTime,
+                                            type = selectedEventType,
+                                            locationType = selectedLocationType,
+                                            address = if (selectedLocationType == LocationType.IGREJA_LOCAL) null else selectedAddress,
+                                            ministryId = selectedMinistryId
+                                        )
+                                    }
+                                    dialogError = null
+                                    showCreateDialog = false
+                                } else {
+                                    if (hasConflict) {
+                                        dialogError = "Este horário coincide com um Culto Ordinário. Apenas ADM, Pastor ou Ancião podem agendar eventos nesse horário."
+                                    } else {
+                                        dialogError = "Você não tem permissão para gerenciar eventos para este ministério."
+                                    }
+                                }
                             }
-                            showCreateDialog = false
                         }
                     }
                 ) {
@@ -229,6 +337,8 @@ fun CalendarScreen(
                         selectedEventType = EventType.EXTRAORDINARIO
                         selectedLocationType = LocationType.IGREJA_LOCAL
                         selectedAddress = ""
+                        selectedMinistryId = null
+                        dialogError = null
                         showCreateDialog = true
                     },
                     icon = { Icon(Icons.Default.Add, contentDescription = "Novo Evento") },
@@ -313,8 +423,14 @@ fun CalendarScreen(
                             EventType.REUNIAO -> "Reunião"
                         }
 
-                        val canModify = remember(event, currentRole, currentUserEmail) {
-                            canModifyEvent(event, currentRole, currentUserEmail)
+                        val canModify = remember(event, currentRole, directedMinistries) {
+                            com.koinonia.igreja.core.util.EventPermissions.canManageEvent(
+                                event = event,
+                                targetMinistryId = event.ministryId,
+                                currentRole = currentRole,
+                                directedMinistries = directedMinistries,
+                                hasOrdinaryConflict = false
+                            )
                         }
 
                         Card(
@@ -367,6 +483,8 @@ fun CalendarScreen(
                                         selectedEventType = event.type
                                         selectedLocationType = event.locationType
                                         selectedAddress = event.address ?: ""
+                                        selectedMinistryId = event.ministryId
+                                        dialogError = null
                                         showCreateDialog = true
                                     }) {
                                         Icon(

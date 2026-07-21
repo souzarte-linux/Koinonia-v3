@@ -1,6 +1,7 @@
 package com.koinonia.igreja.presentation.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +12,9 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,6 +52,7 @@ import com.koinonia.igreja.presentation.features.reception.ReceptionViewModel
 import com.koinonia.igreja.presentation.features.reports.DashboardScreen
 import com.koinonia.igreja.presentation.features.reports.ReportsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
@@ -121,6 +125,24 @@ fun AppNavigation(
                         icon = { Icon(Icons.Default.Person, contentDescription = null) },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
+
+                    if (currentRole.hasTreasuryAccess) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NavigationDrawerItem(
+                            label = { Text("Tesouraria") },
+                            selected = currentRoute == "treasury",
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate("treasury") {
+                                    popUpTo("calendar") { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
+                    }
                 }
             }
         }
@@ -352,6 +374,44 @@ fun AppNavigation(
                             }
                         }
                     )
+                }
+
+                composable("treasury") {
+                    if (!currentRole.hasTreasuryAccess) {
+                        LaunchedEffect(Unit) {
+                            navController.navigate("calendar") {
+                                popUpTo("calendar") { inclusive = true }
+                            }
+                        }
+                    } else {
+                        Scaffold(
+                            topBar = {
+                                TopAppBar(
+                                    title = { Text("Tesouraria") },
+                                    navigationIcon = {
+                                        IconButton(onClick = {
+                                            scope.launch { drawerState.open() }
+                                        }) {
+                                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                        }
+                                    }
+                                )
+                            }
+                        ) { paddingValues ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(paddingValues),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Tesouraria", style = MaterialTheme.typography.headlineMedium)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Módulo em construção", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

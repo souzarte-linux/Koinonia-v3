@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.entity.MemberEntity
+import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +64,7 @@ class MemberListViewModel @Inject constructor(
                 if (current.isEmpty()) {
                     val seedMembers = listOf(
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_joao",
                             familyId = null,
                             fullName = "João da Silva",
                             photoUrl = null,
@@ -77,13 +78,13 @@ class MemberListViewModel @Inject constructor(
                             complement = "Apto 101",
                             phone = "71988887777",
                             isWhatsapp = true,
-                            socialMedia = "joaosilva",
+                            socialMedia = "joao@koinonia.com",
                             civilStatus = "Casado(a)",
                             baptismDate = Date(100, 10, 20),
                             rebaptismDate = null,
                             rg = "123456789",
                             cpf = "12345678901",
-                            spouseId = null,
+                            spouseId = "seed_member_maria",
                             spouseName = "Maria Santos Souza",
                             hasVehicle = true,
                             vehicleType = "CARRO",
@@ -91,7 +92,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_maria",
                             familyId = null,
                             fullName = "Maria Santos Souza",
                             photoUrl = null,
@@ -105,13 +106,13 @@ class MemberListViewModel @Inject constructor(
                             complement = "Casa",
                             phone = "71999998888",
                             isWhatsapp = true,
-                            socialMedia = "mariadesouza",
+                            socialMedia = "maria@koinonia.com",
                             civilStatus = "Casado(a)",
                             baptismDate = Date(105, 8, 15),
                             rebaptismDate = null,
                             rg = "987654321",
                             cpf = "98765432109",
-                            spouseId = null,
+                            spouseId = "seed_member_joao",
                             spouseName = "João da Silva",
                             hasVehicle = false,
                             vehicleType = null,
@@ -119,7 +120,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_carlos",
                             familyId = null,
                             fullName = "Carlos Eduardo Lima",
                             photoUrl = null,
@@ -133,7 +134,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Edf. Horto, Apto 502",
                             phone = "71977776666",
                             isWhatsapp = false,
-                            socialMedia = "carlosedu",
+                            socialMedia = "carlos@koinonia.com",
                             civilStatus = "Solteiro(a)",
                             baptismDate = Date(112, 4, 12),
                             rebaptismDate = null,
@@ -147,7 +148,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_ana",
                             familyId = null,
                             fullName = "Ana Júlia Pinheiro",
                             photoUrl = null,
@@ -161,7 +162,7 @@ class MemberListViewModel @Inject constructor(
                             complement = null,
                             phone = "71966665555",
                             isWhatsapp = true,
-                            socialMedia = "anajulia_p",
+                            socialMedia = "ana@koinonia.com",
                             civilStatus = "Solteiro(a)",
                             baptismDate = Date(118, 9, 21), // Batizada
                             rebaptismDate = null,
@@ -175,7 +176,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_pedro",
                             familyId = null,
                             fullName = "Pedro Alencar Castro",
                             photoUrl = null,
@@ -189,7 +190,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Apto 204",
                             phone = "71955554444",
                             isWhatsapp = true,
-                            socialMedia = "pedro_alencar",
+                            socialMedia = "pedro@koinonia.com",
                             civilStatus = "Divorciado(a)",
                             baptismDate = Date(95, 6, 25),
                             rebaptismDate = null,
@@ -203,7 +204,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_fernanda",
                             familyId = null,
                             fullName = "Fernanda Ribeiro Lima",
                             photoUrl = null,
@@ -217,7 +218,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Edf. Centenário, Apto 1201",
                             phone = "71944443333",
                             isWhatsapp = true,
-                            socialMedia = "fernanda_rl",
+                            socialMedia = "fernanda@koinonia.com",
                             civilStatus = "Casado(a)",
                             baptismDate = Date(110, 2, 28),
                             rebaptismDate = null,
@@ -231,7 +232,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_lucas",
                             familyId = null,
                             fullName = "Lucas Mateus Oliveira",
                             photoUrl = null,
@@ -245,7 +246,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Sala 4",
                             phone = "71933332222",
                             isWhatsapp = false,
-                            socialMedia = "lucasmateus",
+                            socialMedia = "lucas@koinonia.com",
                             civilStatus = "Solteiro(a)",
                             baptismDate = Date(115, 12, 10),
                             rebaptismDate = null,
@@ -259,7 +260,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_beatriz",
                             familyId = null,
                             fullName = "Beatriz Rocha Gomes",
                             photoUrl = null,
@@ -273,7 +274,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Casa B",
                             phone = "71922221111",
                             isWhatsapp = true,
-                            socialMedia = "biarocha",
+                            socialMedia = "beatriz@koinonia.com",
                             civilStatus = "Solteiro(a)",
                             baptismDate = Date(108, 5, 17),
                             rebaptismDate = null,
@@ -287,7 +288,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_marcos",
                             familyId = null,
                             fullName = "Marcos Vinícius Andrade",
                             photoUrl = null,
@@ -301,7 +302,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Apto 303B",
                             phone = "71911110000",
                             isWhatsapp = true,
-                            socialMedia = "marcos_vinicius",
+                            socialMedia = "marcos@koinonia.com",
                             civilStatus = "Casado(a)",
                             baptismDate = Date(102, 11, 8),
                             rebaptismDate = null,
@@ -315,7 +316,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_juliana",
                             familyId = null,
                             fullName = "Juliana Mendes Ferreira",
                             photoUrl = null,
@@ -329,7 +330,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Casa 10",
                             phone = "71999887766",
                             isWhatsapp = true,
-                            socialMedia = "ju_mendes",
+                            socialMedia = "juliana@koinonia.com",
                             civilStatus = "União Estável",
                             baptismDate = Date(107, 7, 24),
                             rebaptismDate = null,
@@ -343,7 +344,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_felipe",
                             familyId = null,
                             fullName = "Felipe Gabriel Cunha",
                             photoUrl = null,
@@ -357,7 +358,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Apto 801",
                             phone = "71999776655",
                             isWhatsapp = false,
-                            socialMedia = "felipe_cunha",
+                            socialMedia = "felipe@koinonia.com",
                             civilStatus = "Solteiro(a)",
                             baptismDate = Date(114, 1, 14),
                             rebaptismDate = null,
@@ -371,7 +372,7 @@ class MemberListViewModel @Inject constructor(
                             syncPending = false
                         ),
                         MemberEntity(
-                            id = UUID.randomUUID().toString(),
+                            id = "seed_member_camila",
                             familyId = null,
                             fullName = "Camila Nogueira Neves",
                             photoUrl = null,
@@ -385,7 +386,7 @@ class MemberListViewModel @Inject constructor(
                             complement = "Edf. Mar, Apto 202",
                             phone = "71999665544",
                             isWhatsapp = true,
-                            socialMedia = "camila_nogueira",
+                            socialMedia = "camila@koinonia.com",
                             civilStatus = "Viúvo(a)",
                             baptismDate = Date(111, 10, 9),
                             rebaptismDate = null,
@@ -400,6 +401,50 @@ class MemberListViewModel @Inject constructor(
                         )
                     )
                     memberDao.insertMembers(seedMembers)
+
+                    val seedMinistriesHistory = listOf(
+                        MinistryHistoryEntity(
+                            id = "seed_history_joao_anciao",
+                            memberId = "seed_member_joao",
+                            ministryId = "diaconato",
+                            ministryName = "Diaconato",
+                            role = "Ancião",
+                            startDate = Date(120, 0, 1),
+                            endDate = null,
+                            syncPending = false
+                        ),
+                        MinistryHistoryEntity(
+                            id = "seed_history_maria_diretora",
+                            memberId = "seed_member_maria",
+                            ministryId = "crianca",
+                            ministryName = "Ministério da Criança",
+                            role = "Diretor(a)",
+                            startDate = Date(122, 5, 10),
+                            endDate = null,
+                            syncPending = false
+                        ),
+                        MinistryHistoryEntity(
+                            id = "seed_history_carlos_tesoureiro",
+                            memberId = "seed_member_carlos",
+                            ministryId = "mordomia",
+                            ministryName = "Ministério de Mordomia Cristã",
+                            role = "Tesoureiro(a)",
+                            startDate = Date(121, 2, 15),
+                            endDate = null,
+                            syncPending = false
+                        ),
+                        MinistryHistoryEntity(
+                            id = "seed_history_ana_diaconisa",
+                            memberId = "seed_member_ana",
+                            ministryId = "diaconato",
+                            ministryName = "Diaconato",
+                            role = "Diácono / Diaconisa",
+                            startDate = Date(124, 1, 1),
+                            endDate = null,
+                            syncPending = false
+                        )
+                    )
+                    memberDao.insertMinistryHistories(seedMinistriesHistory)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
