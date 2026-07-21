@@ -61,6 +61,7 @@ class MemberRegistrationViewModel @Inject constructor(
     val email = MutableStateFlow("")
     val createAccess = MutableStateFlow(false)
     val generatedPassword = MutableStateFlow<String?>(null)
+    val validationError = MutableStateFlow<String?>(null)
 
     // Controle de Edição
     val editingMemberId = MutableStateFlow<String?>(null)
@@ -316,6 +317,24 @@ class MemberRegistrationViewModel @Inject constructor(
                 }
             } else null
 
+            val rawPhone = phone.value.filter { it.isDigit() }
+            val normalizedPhone = if (rawPhone.isNotBlank()) {
+                if (rawPhone.startsWith("55") && (rawPhone.length == 12 || rawPhone.length == 13)) {
+                    rawPhone
+                } else if (rawPhone.length == 10 || rawPhone.length == 11) {
+                    "55$rawPhone"
+                } else {
+                    rawPhone
+                }
+            } else ""
+
+            if (createAccess.value) {
+                if (email.value.isBlank() && normalizedPhone.isBlank()) {
+                    validationError.value = "Para gerar acesso ao app, preencha o E-mail ou o Telefone do membro."
+                    return@launch
+                }
+            }
+
             var finalAuthUserId: String? = null
             var finalMustChange = false
 
@@ -324,7 +343,6 @@ class MemberRegistrationViewModel @Inject constructor(
                 val resolvedEmail = if (email.value.isNotBlank()) {
                     email.value.trim()
                 } else {
-                    val normalizedPhone = phone.value.filter { it.isDigit() }
                     "$normalizedPhone@membros.koinonia.app"
                 }
 
@@ -351,7 +369,7 @@ class MemberRegistrationViewModel @Inject constructor(
                 city = city.value,
                 state = state.value,
                 complement = complement.value.take(400),
-                phone = phone.value,
+                phone = normalizedPhone.ifBlank { null },
                 isWhatsapp = isWhatsapp.value,
                 socialMedia = socialMedia.value,
                 civilStatus = civilStatus.value,
@@ -430,6 +448,7 @@ class MemberRegistrationViewModel @Inject constructor(
         email.value = ""
         createAccess.value = false
         generatedPassword.value = null
+        validationError.value = null
         cep.value = ""
         street.value = ""
         number.value = ""
