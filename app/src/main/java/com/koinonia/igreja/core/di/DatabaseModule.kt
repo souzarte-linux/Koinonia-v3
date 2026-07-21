@@ -30,7 +30,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "koinonia_database"
         )
-        .addMigrations(AppDatabase.MIGRATION_6_7)
+        .addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8)
         .fallbackToDestructiveMigration()
         .build()
     }

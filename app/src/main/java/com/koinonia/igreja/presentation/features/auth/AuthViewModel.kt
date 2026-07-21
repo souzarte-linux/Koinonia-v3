@@ -31,6 +31,7 @@ class AuthViewModel @Inject constructor(
 
     val currentUserRole = authRepository.currentUserRole
     val authResolutionState = authRepository.authResolutionState
+    val directedMinistries = authRepository.directedMinistries
 
     private val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
@@ -112,6 +113,24 @@ class AuthViewModel @Inject constructor(
                 _authState.value = AuthState.Error(error.localizedMessage ?: "Erro na autenticação social")
             }
         }
+    }
+
+    fun updatePassword(newPass: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val result = authRepository.updatePassword(newPass)
+            result.onSuccess {
+                _authState.value = AuthState.Success(authRepository.currentUserRole.value)
+                onComplete(true)
+            }.onFailure { error ->
+                _authState.value = AuthState.Error(error.localizedMessage ?: "Erro ao atualizar senha")
+                onComplete(false)
+            }
+        }
+    }
+
+    suspend fun checkIfMustChangePassword(): Boolean {
+        return authRepository.mustChangePassword()
     }
 
     fun resetAuthState() {

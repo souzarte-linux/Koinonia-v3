@@ -1,6 +1,7 @@
 package com.koinonia.igreja.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.koinonia.igreja.domain.model.Member
 import java.time.ZoneId
@@ -8,7 +9,14 @@ import java.time.ZonedDateTime
 import java.util.Date
 import java.util.UUID
 
-@Entity(tableName = "members")
+@Entity(
+    tableName = "members",
+    indices = [
+        Index(value = ["email"], unique = true),
+        Index(value = ["phone"], unique = true),
+        Index(value = ["authUserId"], unique = true)
+    ]
+)
 data class MemberEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
@@ -40,13 +48,18 @@ data class MemberEntity(
     
     // Controle Offline-First
     val syncPending: Boolean = true,
-    val updatedAt: Date = Date() 
+    val updatedAt: Date = Date(),
+
+    // Campos novos para controle de acesso sólidos
+    val email: String? = null,
+    val authUserId: String? = null,
+    val mustChangePassword: Boolean = false
 ) {
     fun toDomain(): Member {
         return Member(
             id = id,
             name = fullName,
-            email = socialMedia ?: "", // Campo de apoio provisório
+            email = email ?: "", // E-mail real do membro
             phone = phone ?: "",
             role = vehicleType ?: "Membro", // Usado para mapear a função
             joinedAt = ZonedDateTime.ofInstant(createdAt.toInstant(), ZoneId.systemDefault()),
@@ -71,7 +84,8 @@ data class MemberEntity(
                 complement = null,
                 phone = member.phone,
                 isWhatsapp = false,
-                socialMedia = member.email,
+                socialMedia = null,
+                email = member.email,
                 civilStatus = null,
                 baptismDate = null,
                 rebaptismDate = null,
@@ -84,7 +98,9 @@ data class MemberEntity(
                 vehicleModel = null,
                 createdAt = Date.from(member.joinedAt.toInstant()),
                 syncPending = syncPending,
-                updatedAt = Date()
+                updatedAt = Date(),
+                authUserId = null,
+                mustChangePassword = false
             )
         }
     }

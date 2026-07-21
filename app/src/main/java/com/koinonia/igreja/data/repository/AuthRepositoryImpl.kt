@@ -61,17 +61,33 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun login(email: String, password: String): Result<AppRole> {
+    private suspend fun resolveEmailFromInput(input: String): String {
+        if (input.contains("@")) {
+            return input.trim()
+        }
+        val digits = input.filter { it.isDigit() }
+        if (digits.isNotBlank()) {
+            val member = memberDao.get().getMemberByPhone(digits)
+            if (member != null && member.email != null) {
+                return member.email
+            }
+            return "$digits@membros.koinonia.app"
+        }
+        return input.trim()
+    }
+
+    suspend fun login(emailOrPhone: String, password: String): Result<AppRole> {
         return try {
+            val resolvedEmail = resolveEmailFromInput(emailOrPhone)
             // 1. Autentica no provedor de identidade (Supabase Auth)
             supabaseClient.auth.signInWith(Email) {
-                this.email = email
+                this.email = resolvedEmail
                 this.password = password
             }
 
             // 2. Resolve a role dinamicamente com base no Histórico Ministerial do membro
-            val role = resolveRoleFromMinistries(email)
-            val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
+            val role = resolveRoleFromMinistries(resolvedEmail)
+            val directorships = getMinistryDirectorshipsUseCase.get().invoke(resolvedEmail)
             
             // 3. Atualiza o estado global
             _currentUserRole.value = role
@@ -92,9 +108,10 @@ class AuthRepositoryImpl @Inject constructor(
         _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
     }
 
-    suspend fun resetPassword(email: String): Result<Unit> {
+    suspend fun resetPassword(emailOrPhone: String): Result<Unit> {
         return try {
-            supabaseClient.auth.resetPasswordForEmail(email)
+            val resolvedEmail = resolveEmailFromInput(emailOrPhone)
+            supabaseClient.auth.resetPasswordForEmail(resolvedEmail)
             Result.success(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -180,6 +197,47 @@ class AuthRepositoryImpl @Inject constructor(
 
     fun getCurrentUserEmail(): String? {
         return supabaseClient.auth.currentSessionOrNull()?.user?.email
+    }
+
+    suspend fun signUpForMember(email: String, password: String): Result<String> {
+        return try {
+            val userInfo = supabaseClient.auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
+            }
+            val userId = userInfo?.id 
+                ?: supabaseClient.auth.currentUserOrNull()?.id
+                ?: throw Exception("Falha ao obter ID do usuário")
+            Result.success(userId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun mustChangePassword(): Boolean {
+        val email = getCurrentUserEmail() ?: return false
+        val member = memberDao.get().getMemberByEmail(email)
+        return member?.mustChangePassword ?: false
+    }
+
+    suspend fun updatePassword(newPassword: String): Result<Unit> {
+        return try {
+            supabaseClient.auth.updateUser {
+                password = newPassword
+            }
+            val email = getCurrentUserEmail()
+            if (email != null) {
+                val member = memberDao.get().getMemberByEmail(email)
+                if (member != null) {
+                    memberDao.get().insertMember(member.copy(mustChangePassword = false))
+                }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 
     private suspend fun resolveRoleFromMinistries(email: String): AppRole {

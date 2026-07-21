@@ -33,7 +33,7 @@ import com.koinonia.igreja.data.local.entity.VisitorEntity
         MinistryHistoryEntity::class,
         MinistryEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -134,6 +134,23 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("UPDATE ministry_history SET ministryId = 'escola_sabatina' WHERE ministryName LIKE '%escola%'")
                 db.execSQL("UPDATE ministry_history SET ministryId = 'pessoal' WHERE ministryName LIKE '%pessoal%'")
                 db.execSQL("UPDATE ministry_history SET ministryId = 'asa' WHERE ministryName LIKE '%dorcas%' OR ministryName LIKE '%asa%'")
+            }
+        }
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Add email, authUserId, mustChangePassword columns to members
+                db.execSQL("ALTER TABLE members ADD COLUMN email TEXT")
+                db.execSQL("ALTER TABLE members ADD COLUMN authUserId TEXT")
+                db.execSQL("ALTER TABLE members ADD COLUMN mustChangePassword INTEGER NOT NULL DEFAULT 0")
+
+                // 2. Create unique indexes on email, phone, authUserId
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_members_email ON members(email)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_members_phone ON members(phone)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_members_authUserId ON members(authUserId)")
+
+                // 3. Migrate existing email data: copy socialMedia values that match an email format
+                db.execSQL("UPDATE members SET email = socialMedia WHERE socialMedia LIKE '%@%'")
             }
         }
     }
