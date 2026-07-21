@@ -56,6 +56,7 @@ fun MemberRegistrationScreen(
     viewModel: MemberRegistrationViewModel = hiltViewModel()
 ) {
     val isSaved by viewModel.isSaved.collectAsState()
+    val validationError by viewModel.validationError.collectAsState()
 
     // Reage ao estado de sucesso no salvamento para fechar a tela
     LaunchedEffect(isSaved) {
@@ -63,6 +64,19 @@ fun MemberRegistrationScreen(
             onNavigateBack()
             viewModel.resetState()
         }
+    }
+
+    if (validationError != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.validationError.value = null },
+            title = { Text("Dados Necessários") },
+            text = { Text(validationError!!) },
+            confirmButton = {
+                Button(onClick = { viewModel.validationError.value = null }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     // Estado local para controle do Accordion (quais seções estão expandidas)
@@ -480,7 +494,7 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
                 onValueChange = { input -> 
                     viewModel.phone.value = input.filter { it.isDigit() }.take(11)
                 },
-                label = { Text("Telefone") },
+                label = { Text("Telefone (Usado para login)") },
                 placeholder = { Text("Ex: (71) 9.9999-8888") },
                 visualTransformation = PhoneVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -506,7 +520,7 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
         OutlinedTextField(
             value = email,
             onValueChange = { viewModel.email.value = it },
-            label = { Text("E-mail de Acesso") },
+            label = { Text("E-mail (Usado para login)") },
             placeholder = { Text("Ex: joao@gmail.com") },
             modifier = Modifier.fillMaxWidth()
         )

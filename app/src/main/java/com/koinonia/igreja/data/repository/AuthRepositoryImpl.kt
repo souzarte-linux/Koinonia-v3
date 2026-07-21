@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 
 sealed class AuthResolutionState {
     object LOADING : AuthResolutionState()
@@ -204,6 +208,9 @@ class AuthRepositoryImpl @Inject constructor(
             val userInfo = supabaseClient.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
+                userMetadata = buildJsonObject {
+                    put("must_change_password", true)
+                }
             }
             val userId = userInfo?.id 
                 ?: supabaseClient.auth.currentUserOrNull()?.id
@@ -218,13 +225,27 @@ class AuthRepositoryImpl @Inject constructor(
     suspend fun mustChangePassword(): Boolean {
         val email = getCurrentUserEmail() ?: return false
         val member = memberDao.get().getMemberByEmail(email)
-        return member?.mustChangePassword ?: false
+        if (member?.mustChangePassword == true) return true
+
+        // Fallback para metadados remotos do Supabase Auth (caso o banco local esteja vazio no 1º login em novo aparelho)
+        val user = supabaseClient.auth.currentSessionOrNull()?.user
+        val metaFlag = user?.userMetadata?.get("must_change_password")?.jsonPrimitive?.booleanOrNull
+        if (metaFlag == true) {
+            if (member != null) {
+                memberDao.get().insertMember(member.copy(mustChangePassword = true))
+            }
+            return true
+        }
+        return false
     }
 
     suspend fun updatePassword(newPassword: String): Result<Unit> {
         return try {
             supabaseClient.auth.updateUser {
                 password = newPassword
+                data = buildJsonObject {
+                    put("must_change_password", false)
+                }
             }
             val email = getCurrentUserEmail()
             if (email != null) {
