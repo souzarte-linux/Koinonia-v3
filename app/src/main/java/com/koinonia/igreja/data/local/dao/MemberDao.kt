@@ -20,8 +20,11 @@ interface MemberDao {
     @Query("SELECT * FROM members ORDER BY fullName ASC")
     fun getAllMembers(): Flow<List<MemberEntity>>
 
-    @Query("SELECT * FROM members WHERE socialMedia = :email LIMIT 1")
+    @Query("SELECT * FROM members WHERE email = :email LIMIT 1")
     suspend fun getMemberByEmail(email: String): MemberEntity?
+
+    @Query("SELECT * FROM members WHERE phone = :phone LIMIT 1")
+    suspend fun getMemberByPhone(phone: String): MemberEntity?
     
     @Query("SELECT * FROM members WHERE id = :id")
     suspend fun getMemberById(id: String): MemberEntity?

@@ -39,10 +39,12 @@ data class MinistryHistoryUiState(
 class MemberRegistrationViewModel @Inject constructor(
     private val registrationDao: MemberRegistrationDao,
     private val memberDao: MemberDao,
-    private val ministryDao: com.koinonia.igreja.data.local.dao.MinistryDao
+    private val ministryDao: com.koinonia.igreja.data.local.dao.MinistryDao,
+    private val authRepository: com.koinonia.igreja.data.repository.AuthRepositoryImpl
 ) : ViewModel() {
 
     val allMinistries = ministryDao.getAllMinistries()
+    val currentRole = authRepository.currentUserRole
 
     val roleOptions = listOf(
         // DIRECTOR
@@ -54,6 +56,11 @@ class MemberRegistrationViewModel @Inject constructor(
         "Diretor(a) de Música", "Pianista/Organista", "Músico(a)", "Diácono / Diaconisa", 
         "Membro da Comissão/Conselho", "Colportor(a)-Evangelista", "Bibliotecário(a)"
     )
+
+    // Novos campos de contato e acesso
+    val email = MutableStateFlow("")
+    val createAccess = MutableStateFlow(false)
+    val generatedPassword = MutableStateFlow<String?>(null)
 
     // Controle de Edição
     val editingMemberId = MutableStateFlow<String?>(null)
@@ -157,6 +164,7 @@ class MemberRegistrationViewModel @Inject constructor(
                 phone.value = member.phone ?: ""
                 isWhatsapp.value = member.isWhatsapp
                 socialMedia.value = member.socialMedia ?: ""
+                email.value = member.email ?: ""
                 cep.value = member.cep ?: ""
                 street.value = member.street ?: ""
                 number.value = member.number ?: ""
@@ -308,6 +316,28 @@ class MemberRegistrationViewModel @Inject constructor(
                 }
             } else null
 
+            var finalAuthUserId: String? = null
+            var finalMustChange = false
+
+            if (createAccess.value) {
+                val tempPassword = (1..8).map { (('A'..'Z') + ('a'..'z') + ('0'..'9')).random() }.joinToString("")
+                val resolvedEmail = if (email.value.isNotBlank()) {
+                    email.value.trim()
+                } else {
+                    val normalizedPhone = phone.value.filter { it.isDigit() }
+                    "$normalizedPhone@membros.koinonia.app"
+                }
+
+                val authResult = authRepository.signUpForMember(resolvedEmail, tempPassword)
+                authResult.onSuccess { userId ->
+                    finalAuthUserId = userId
+                    finalMustChange = true
+                    generatedPassword.value = tempPassword
+                }.onFailure { error ->
+                    error.printStackTrace()
+                }
+            }
+
             val newMember = MemberEntity(
                 id = memberId,
                 familyId = finalFamilyId,
@@ -334,7 +364,10 @@ class MemberRegistrationViewModel @Inject constructor(
                 hasVehicle = hasVehicle.value,
                 vehicleType = if (hasVehicle.value) vehicleType.value else null,
                 vehicleModel = if (hasVehicle.value) vehicleModel.value else null,
-                syncPending = true
+                syncPending = true,
+                email = email.value.ifBlank { null },
+                authUserId = finalAuthUserId,
+                mustChangePassword = finalMustChange
             )
 
             val childEntities = children.value.map { child ->
@@ -394,6 +427,9 @@ class MemberRegistrationViewModel @Inject constructor(
         phone.value = ""
         isWhatsapp.value = false
         socialMedia.value = ""
+        email.value = ""
+        createAccess.value = false
+        generatedPassword.value = null
         cep.value = ""
         street.value = ""
         number.value = ""

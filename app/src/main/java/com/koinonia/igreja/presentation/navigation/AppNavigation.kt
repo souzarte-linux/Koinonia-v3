@@ -38,6 +38,7 @@ import com.koinonia.igreja.presentation.features.auth.AuthState
 import com.koinonia.igreja.presentation.features.auth.AuthViewModel
 import com.koinonia.igreja.presentation.features.auth.ForgotPasswordScreen
 import com.koinonia.igreja.presentation.features.auth.LoginScreen
+import com.koinonia.igreja.presentation.features.auth.CreatePermanentPasswordScreen
 import com.koinonia.igreja.presentation.features.calendar.CalendarScreen
 import com.koinonia.igreja.presentation.features.calendar.CalendarViewModel
 import com.koinonia.igreja.presentation.features.calendar.EventRegistrationScreen
@@ -62,11 +63,12 @@ fun AppNavigation(
     val currentRole by authViewModel.currentUserRole.collectAsState()
     val authState by authViewModel.authState.collectAsState()
     val authResolutionState by authViewModel.authResolutionState.collectAsState()
+    val directedMinistries by authViewModel.directedMinistries.collectAsState()
 
     // Determina a rota atual para exibição da BottomBar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute != "login" && currentRoute != "forgot_password" && currentRoute != null
+    val showBottomBar = currentRoute != "login" && currentRoute != "forgot_password" && currentRoute != "change_password" && currentRoute != null
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -82,7 +84,25 @@ fun AppNavigation(
                 }
             }
             is AuthResolutionState.AUTHENTICATED -> {
-                navController.navigate("calendar") {
+                val mustChange = authViewModel.checkIfMustChangePassword()
+                if (mustChange) {
+                    navController.navigate("change_password") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                } else {
+                    navController.navigate("calendar") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(currentRoute, authResolutionState) {
+        if (authResolutionState is AuthResolutionState.AUTHENTICATED) {
+            val mustChange = authViewModel.checkIfMustChangePassword()
+            if (mustChange && currentRoute != "change_password") {
+                navController.navigate("change_password") {
                     popUpTo(0) { inclusive = true }
                 }
             }
@@ -99,10 +119,12 @@ fun AppNavigation(
         return
     }
 
+    val hasDrawer = currentRoute != "login" && currentRoute != "forgot_password" && currentRoute != "change_password" && currentRoute != null && (currentRole.hasFullAccess || currentRole.hasTreasuryAccess)
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            if (showBottomBar) {
+            if (hasDrawer) {
                 ModalDrawerSheet {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -111,20 +133,22 @@ fun AppNavigation(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
-                    NavigationDrawerItem(
-                        label = { Text("Membros") },
-                        selected = currentRoute == "members_list" || currentRoute == "member_add" || currentRoute?.startsWith("member_details") == true,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navController.navigate("members_list") {
-                                popUpTo("members_list") { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
+                    if (currentRole.hasFullAccess) {
+                        NavigationDrawerItem(
+                            label = { Text("Membros") },
+                            selected = currentRoute == "members_list" || currentRoute == "member_add" || currentRoute?.startsWith("member_details") == true,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate("members_list") {
+                                    popUpTo("members_list") { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
+                    }
 
                     if (currentRole.hasTreasuryAccess) {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -207,8 +231,7 @@ fun AppNavigation(
                         LoginScreen(
                             viewModel = authViewModel,
                             onNavigateToHome = { role ->
-                                val destination = if (role == AppRole.VIEWER) "reports" else "calendar"
-                                navController.navigate(destination) {
+                                navController.navigate("calendar") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             },
@@ -234,50 +257,85 @@ fun AppNavigation(
                         )
                     }
 
-                    composable("members_list") {
-                        val viewModel: MemberListViewModel = hiltViewModel()
-                        MemberListScreen(
-                            viewModel = viewModel,
-                            onMenuClick = {
-                                scope.launch { drawerState.open() }
-                            },
-                            onEditMember = { memberId ->
-                                navController.navigate("member_edit/$memberId")
-                            },
-                            onNavigateToDetails = { memberId ->
-                                navController.navigate("member_details/$memberId")
-                            },
-                            onNavigateToRegistration = {
-                                navController.navigate("member_add")
+                    composable("change_password") {
+                        CreatePermanentPasswordScreen(
+                            viewModel = authViewModel,
+                            onPasswordChanged = {
+                                navController.navigate("calendar") {
+                                    popUpTo("change_password") { inclusive = true }
+                                }
                             }
                         )
                     }
 
-                    composable("member_add") {
-                        val viewModel: MemberRegistrationViewModel = hiltViewModel()
-                        MemberRegistrationScreen(
-                            viewModel = viewModel,
-                            onNavigateBack = {
-                                navController.popBackStack()
+                    composable("members_list") {
+                        if (!currentRole.hasFullAccess) {
+                            LaunchedEffect(Unit) {
+                                navController.navigate("calendar") {
+                                    popUpTo("calendar") { inclusive = true }
+                                }
                             }
-                        )
+                        } else {
+                            val viewModel: MemberListViewModel = hiltViewModel()
+                            MemberListScreen(
+                                viewModel = viewModel,
+                                onMenuClick = {
+                                    scope.launch { drawerState.open() }
+                                },
+                                onEditMember = { memberId ->
+                                    navController.navigate("member_edit/$memberId")
+                                },
+                                onNavigateToDetails = { memberId ->
+                                    navController.navigate("member_details/$memberId")
+                                },
+                                onNavigateToRegistration = {
+                                    navController.navigate("member_add")
+                                }
+                            )
+                        }
+                    }
+
+                    composable("member_add") {
+                        if (!currentRole.hasFullAccess) {
+                            LaunchedEffect(Unit) {
+                                navController.navigate("calendar") {
+                                    popUpTo("calendar") { inclusive = true }
+                                }
+                            }
+                        } else {
+                            val viewModel: MemberRegistrationViewModel = hiltViewModel()
+                            MemberRegistrationScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
                     }
 
                     composable(
                         route = "member_edit/{memberId}",
                         arguments = listOf(navArgument("memberId") { type = NavType.StringType })
                     ) { backStackEntry ->
-                        val memberId = backStackEntry.arguments?.getString("memberId") ?: ""
-                        val viewModel: MemberRegistrationViewModel = hiltViewModel()
-                        LaunchedEffect(memberId) {
-                            viewModel.loadMemberToEdit(memberId)
-                        }
-                        MemberRegistrationScreen(
-                            viewModel = viewModel,
-                            onNavigateBack = {
-                                navController.popBackStack()
+                        if (!currentRole.hasFullAccess) {
+                            LaunchedEffect(Unit) {
+                                navController.navigate("calendar") {
+                                    popUpTo("calendar") { inclusive = true }
+                                }
                             }
-                        )
+                        } else {
+                            val memberId = backStackEntry.arguments?.getString("memberId") ?: ""
+                            val viewModel: MemberRegistrationViewModel = hiltViewModel()
+                            LaunchedEffect(memberId) {
+                                viewModel.loadMemberToEdit(memberId)
+                            }
+                            MemberRegistrationScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
                     }
 
                 composable(
@@ -297,11 +355,12 @@ fun AppNavigation(
 
                 composable("calendar") {
                     val viewModel: CalendarViewModel = hiltViewModel()
+                    val hasDrawerItems = currentRole.hasFullAccess || currentRole.hasTreasuryAccess
                     CalendarScreen(
                         viewModel = viewModel,
-                        onMenuClick = {
-                            scope.launch { drawerState.open() }
-                        },
+                        onMenuClick = if (hasDrawerItems) {
+                            { scope.launch { drawerState.open() } }
+                        } else null,
                         onBack = {
                             navController.popBackStack()
                         },
@@ -315,11 +374,20 @@ fun AppNavigation(
                 }
 
                 composable("event_create") {
-                    EventRegistrationScreen(
-                        onNavigateBack = {
-                            navController.popBackStack()
+                    val canCreate = currentRole.hasFullAccess || directedMinistries.isNotEmpty()
+                    if (!canCreate) {
+                        LaunchedEffect(Unit) {
+                            navController.navigate("calendar") {
+                                popUpTo("calendar") { inclusive = true }
+                            }
                         }
-                    )
+                    } else {
+                        EventRegistrationScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
                 }
 
                 composable(
@@ -348,9 +416,9 @@ fun AppNavigation(
                             }
                         )
                     } else if (currentRole == AppRole.VIEWER) {
-                        // Redirecionamento forçado para painel de visualização se não tiver permissão
+                        // Redirecionamento forçado para a agenda se não tiver permissão
                         LaunchedEffect(Unit) {
-                            navController.navigate("reports") {
+                            navController.navigate("calendar") {
                                 popUpTo("reception") { inclusive = true }
                             }
                         }
@@ -365,15 +433,23 @@ fun AppNavigation(
                 }
 
                 composable("reports") {
-                    val viewModel: ReportsViewModel = hiltViewModel()
-                    DashboardScreen(
-                        viewModel = viewModel,
-                        onBack = {
+                    if (!currentRole.hasFullAccess) {
+                        LaunchedEffect(Unit) {
                             navController.navigate("calendar") {
                                 popUpTo("calendar") { inclusive = true }
                             }
                         }
-                    )
+                    } else {
+                        val viewModel: ReportsViewModel = hiltViewModel()
+                        DashboardScreen(
+                            viewModel = viewModel,
+                            onBack = {
+                                navController.navigate("calendar") {
+                                    popUpTo("calendar") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                 }
 
                 composable("treasury") {

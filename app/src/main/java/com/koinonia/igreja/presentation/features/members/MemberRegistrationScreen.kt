@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.koinonia.igreja.domain.model.AppRole
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -456,6 +457,10 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
     val phone by viewModel.phone.collectAsState()
     val isWhatsapp by viewModel.isWhatsapp.collectAsState()
     val socialMedia by viewModel.socialMedia.collectAsState()
+    val email by viewModel.email.collectAsState()
+    val createAccess by viewModel.createAccess.collectAsState()
+    val generatedPassword by viewModel.generatedPassword.collectAsState()
+    val currentRole by viewModel.currentRole.collectAsState(initial = AppRole.NONE)
     val cep by viewModel.cep.collectAsState()
     val street by viewModel.street.collectAsState()
     val number by viewModel.number.collectAsState()
@@ -499,12 +504,84 @@ fun ContactLocationSection(viewModel: MemberRegistrationViewModel) {
         }
 
         OutlinedTextField(
-            value = socialMedia,
-            onValueChange = { viewModel.socialMedia.value = it },
+            value = email,
+            onValueChange = { viewModel.email.value = it },
             label = { Text("E-mail de Acesso") },
             placeholder = { Text("Ex: joao@gmail.com") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        OutlinedTextField(
+            value = socialMedia,
+            onValueChange = { viewModel.socialMedia.value = it },
+            label = { Text("Rede Social (@)") },
+            placeholder = { Text("Ex: instagram") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (currentRole.hasFullAccess) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Criar acesso ao app", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Gera conta com e-mail/celular e senha temporária",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = createAccess,
+                    onCheckedChange = { viewModel.createAccess.value = it }
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        if (generatedPassword != null) {
+            val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+            AlertDialog(
+                onDismissRequest = { viewModel.generatedPassword.value = null },
+                title = { Text("Acesso Criado com Sucesso!") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("A conta de login foi gerada para o membro. Informe a senha temporária abaixo:")
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = generatedPassword!!,
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            )
+                        }
+                        Text(
+                            "Aviso: Anote e informe esta senha ao membro com segurança — ela não será mostrada novamente.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            clipboardManager.setText(AnnotatedString(generatedPassword!!))
+                            viewModel.generatedPassword.value = null
+                        }
+                    ) {
+                        Text("Copiar Senha e Fechar")
+                    }
+                }
+            )
+        }
 
         // Adição do Campo CEP com teclado numérico acima do Logradouro
         OutlinedTextField(
