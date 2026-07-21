@@ -20,7 +20,7 @@ interface MemberDao {
     @Query("SELECT * FROM members ORDER BY fullName ASC")
     fun getAllMembers(): Flow<List<MemberEntity>>
 
-    @Query("SELECT * FROM members WHERE email = :email LIMIT 1")
+    @Query("SELECT * FROM members WHERE LOWER(email) = LOWER(:email) OR LOWER(socialMedia) = LOWER(:email) LIMIT 1")
     suspend fun getMemberByEmail(email: String): MemberEntity?
 
     @Query("SELECT * FROM members WHERE phone = :phone LIMIT 1")
