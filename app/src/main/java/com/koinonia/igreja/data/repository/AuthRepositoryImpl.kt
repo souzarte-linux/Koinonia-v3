@@ -208,7 +208,7 @@ class AuthRepositoryImpl @Inject constructor(
             val userInfo = supabaseClient.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
-                userMetadata = buildJsonObject {
+                data = buildJsonObject {
                     put("must_change_password", true)
                 }
             }
