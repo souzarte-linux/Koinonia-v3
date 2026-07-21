@@ -936,6 +936,7 @@ fun ChildrenSection(viewModel: MemberRegistrationViewModel) {
 fun MinistrySection(viewModel: MemberRegistrationViewModel) {
     val ministryRolesList by viewModel.ministryRoles.collectAsState()
     val allMinistries by viewModel.allMinistries.collectAsState(initial = emptyList())
+    val allRoles by viewModel.allRoles.collectAsState(initial = emptyList())
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(
@@ -980,9 +981,17 @@ fun MinistrySection(viewModel: MemberRegistrationViewModel) {
                         }
                     )
 
+                    val roleListOptions = remember(allRoles) {
+                        if (allRoles.isNotEmpty()) {
+                            allRoles.map { it.title }
+                        } else {
+                            viewModel.roleOptions
+                        }
+                    }
+
                     SimpleDropdownField(
                         label = "Cargo",
-                        options = viewModel.roleOptions,
+                        options = roleListOptions,
                         selectedOption = role.role.ifEmpty { "Selecione o Cargo" },
                         onOptionSelected = { roleName ->
                             viewModel.updateMinistryRole(index, role.copy(role = roleName))

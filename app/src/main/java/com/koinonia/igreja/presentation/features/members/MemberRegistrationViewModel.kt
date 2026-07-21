@@ -44,7 +44,35 @@ class MemberRegistrationViewModel @Inject constructor(
 ) : ViewModel() {
 
     val allMinistries = ministryDao.getAllMinistries()
+    val allRoles = ministryDao.getAllRoles()
     val currentRole = authRepository.currentUserRole
+
+    fun addMinistry(name: String, parentId: String?, minAge: Int?, maxAge: Int?, minMembershipMonths: Int?, notes: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val id = name.lowercase().replace(" ", "_").replace(Regex("[^a-z0-9_]"), "")
+            val entity = com.koinonia.igreja.data.local.entity.MinistryEntity(
+                id = id.ifBlank { UUID.randomUUID().toString() },
+                name = name,
+                parentMinistryId = parentId,
+                minAge = minAge,
+                maxAge = maxAge,
+                minMembershipMonths = minMembershipMonths,
+                notes = notes
+            )
+            ministryDao.insertMinistry(entity)
+        }
+    }
+
+    fun addRole(title: String, tier: com.koinonia.igreja.domain.model.MinistryPositionTier) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val entity = com.koinonia.igreja.data.local.entity.MinistryRoleEntity(
+                id = UUID.randomUUID().toString(),
+                title = title,
+                tier = tier
+            )
+            ministryDao.insertRole(entity)
+        }
+    }
 
     val roleOptions = listOf(
         // DIRECTOR
