@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.net.URL
 import java.util.Date
 import java.util.UUID
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 data class ChildUiState(
@@ -235,6 +236,20 @@ class MemberRegistrationViewModel @Inject constructor(
         loadFamilies()
         observeCep()
         loadAllMembers()
+        checkAndSeedDefaultMinistries()
+    }
+
+    private fun checkAndSeedDefaultMinistries() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val currentMinistries = ministryDao.getAllMinistries().firstOrNull()
+                if (currentMinistries.isNullOrEmpty()) {
+                    resetToDefaultMinistriesAndRoles()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun loadFamilies() {

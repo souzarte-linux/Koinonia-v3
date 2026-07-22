@@ -971,9 +971,26 @@ fun MinistrySection(viewModel: MemberRegistrationViewModel) {
                         }
                     }
 
+                    val ministryOptions = remember(allMinistries) {
+                        if (allMinistries.isNotEmpty()) {
+                            allMinistries.map { it.name }
+                        } else {
+                            listOf(
+                                "Ministério Jovem Adventista (MJA)", "Aventureiros", "Desbravadores", "Embaixadores",
+                                "Ministério de Jovens Adultos", "Ministério de Universitários", "Ministério da Criança",
+                                "Ministério do Adolescente", "Escola Sabatina", "Ministério Pessoal", "Sociedade de Homens Adventistas",
+                                "Classe Bíblica", "Ação Solidária Adventista (ASA / Dorcas)", "Ministério da Família",
+                                "Ministério da Mulher", "Ministério Adventista das Possibilidades (MAP) e Surdos",
+                                "Ministério de Saúde e Temperança", "Ministério da Música", "Ministério de Mordomia Cristã",
+                                "Ministério de Publicações", "Comunicação", "Assuntos Públicos e Liberdade Religiosa",
+                                "Educação", "Escritos do Espírito de Profecia", "Ministério da Recepção", "Diaconato"
+                            )
+                        }
+                    }
+
                     SimpleDropdownField(
                         label = "Ministério",
-                        options = allMinistries.map { it.name },
+                        options = ministryOptions,
                         selectedOption = role.ministryName.ifEmpty { "Selecione o Ministério" },
                         onOptionSelected = { name ->
                             val matchedId = allMinistries.find { it.name == name }?.id ?: name
