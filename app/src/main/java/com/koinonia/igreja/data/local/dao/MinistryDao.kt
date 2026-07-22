@@ -22,6 +22,9 @@ interface MinistryDao {
     @Query("SELECT * FROM ministries WHERE id = :id LIMIT 1")
     suspend fun getMinistryById(id: String): MinistryEntity?
 
+    @Query("DELETE FROM ministries WHERE id = :id")
+    suspend fun deleteMinistry(id: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRole(role: MinistryRoleEntity)
 
@@ -30,4 +33,7 @@ interface MinistryDao {
 
     @Query("SELECT * FROM ministry_roles ORDER BY title ASC")
     fun getAllRoles(): Flow<List<MinistryRoleEntity>>
+
+    @Query("DELETE FROM ministry_roles WHERE id = :id")
+    suspend fun deleteRole(id: String)
 }

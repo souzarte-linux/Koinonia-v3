@@ -100,8 +100,8 @@ class AuthRepositoryImpl @Inject constructor(
                         }
                     }
                     .decodeSingleOrNull<com.koinonia.igreja.data.remote.MemberDto>()
-                if (remoteMember != null && remoteMember.email.isNotBlank()) {
-                    return remoteMember.email
+                if (remoteMember != null) {
+                    return "$digits@membros.koinonia.app"
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

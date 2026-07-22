@@ -8,20 +8,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.koinonia.igreja.domain.model.MinistryPositionTier
 
+import com.koinonia.igreja.data.local.entity.MinistryRoleEntity
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoleRegistrationDialog(
     onDismiss: () -> Unit,
-    onConfirm: (title: String, tier: MinistryPositionTier) -> Unit
+    onConfirm: (title: String, tier: MinistryPositionTier) -> Unit,
+    roleToEdit: MinistryRoleEntity? = null
 ) {
-    var title by remember { mutableStateOf("") }
-    var selectedTier by remember { mutableStateOf(MinistryPositionTier.SUPPORT) }
+    var title by remember { mutableStateOf(roleToEdit?.title ?: "") }
+    var selectedTier by remember { mutableStateOf(roleToEdit?.tier ?: MinistryPositionTier.SUPPORT) }
     var tierDropdownExpanded by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cadastrar Cargo", fontWeight = FontWeight.Bold) },
+        title = { Text(if (roleToEdit != null) "Editar Cargo" else "Cadastrar Cargo", fontWeight = FontWeight.Bold) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),

@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.CorporateFare
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,6 +58,8 @@ import com.koinonia.igreja.presentation.features.reception.ReceptionScreen
 import com.koinonia.igreja.presentation.features.reception.ReceptionViewModel
 import com.koinonia.igreja.presentation.features.reports.DashboardScreen
 import com.koinonia.igreja.presentation.features.reports.ReportsViewModel
+import com.koinonia.igreja.presentation.features.members.dialog.MinistryManagementDialog
+import com.koinonia.igreja.presentation.features.members.dialog.RoleManagementDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,8 +74,8 @@ fun AppNavigation(
     val directedMinistries by authViewModel.directedMinistries.collectAsState()
     val memberRegistrationViewModel: MemberRegistrationViewModel = hiltViewModel()
 
-    var showMinistryDialog by remember { mutableStateOf(false) }
-    var showRoleDialog by remember { mutableStateOf(false) }
+    var showMinistryManagementDialog by remember { mutableStateOf(false) }
+    var showRoleManagementDialog by remember { mutableStateOf(false) }
 
     // Determina a rota atual para exibição da BottomBar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -129,24 +133,30 @@ fun AppNavigation(
 
     val hasDrawer = currentRoute != "login" && currentRoute != "forgot_password" && currentRoute != "change_password" && currentRoute != null && (currentRole.hasFullAccess || currentRole.hasTreasuryAccess)
 
-    if (showMinistryDialog) {
+    if (showMinistryManagementDialog) {
         val allMinistries by memberRegistrationViewModel.allMinistries.collectAsState(initial = emptyList())
-        com.koinonia.igreja.presentation.features.members.dialog.MinistryRegistrationDialog(
+        MinistryManagementDialog(
             allMinistries = allMinistries,
-            onDismiss = { showMinistryDialog = false },
-            onConfirm = { name, parentId, minAge, maxAge, minMembershipMonths, notes ->
-                memberRegistrationViewModel.addMinistry(name, parentId, minAge, maxAge, minMembershipMonths, notes)
-                showMinistryDialog = false
+            onDismiss = { showMinistryManagementDialog = false },
+            onSaveMinistry = { name, parentId, minAge, maxAge, minMembershipMonths, notes, existingId ->
+                memberRegistrationViewModel.addMinistry(name, parentId, minAge, maxAge, minMembershipMonths, notes, existingId)
+            },
+            onDeleteMinistry = { id ->
+                memberRegistrationViewModel.deleteMinistry(id)
             }
         )
     }
 
-    if (showRoleDialog) {
-        com.koinonia.igreja.presentation.features.members.dialog.RoleRegistrationDialog(
-            onDismiss = { showRoleDialog = false },
-            onConfirm = { title, tier ->
-                memberRegistrationViewModel.addRole(title, tier)
-                showRoleDialog = false
+    if (showRoleManagementDialog) {
+        val allRoles by memberRegistrationViewModel.allRoles.collectAsState(initial = emptyList())
+        RoleManagementDialog(
+            allRoles = allRoles,
+            onDismiss = { showRoleManagementDialog = false },
+            onSaveRole = { title, tier, existingId ->
+                memberRegistrationViewModel.addRole(title, tier, existingId)
+            },
+            onDeleteRole = { id ->
+                memberRegistrationViewModel.deleteRole(id)
             }
         )
     }
@@ -179,23 +189,23 @@ fun AppNavigation(
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
                         NavigationDrawerItem(
-                            label = { Text("Cadastrar Ministério") },
+                            label = { Text("Ministérios") },
                             selected = false,
                             onClick = {
                                 scope.launch { drawerState.close() }
-                                showMinistryDialog = true
+                                showMinistryManagementDialog = true
                             },
-                            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                            icon = { Icon(Icons.Default.CorporateFare, contentDescription = null) },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
                         NavigationDrawerItem(
-                            label = { Text("Cadastrar Cargo") },
+                            label = { Text("Cargos") },
                             selected = false,
                             onClick = {
                                 scope.launch { drawerState.close() }
-                                showRoleDialog = true
+                                showRoleManagementDialog = true
                             },
-                            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                            icon = { Icon(Icons.Default.Badge, contentDescription = null) },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
                     }
