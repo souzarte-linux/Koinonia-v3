@@ -473,35 +473,18 @@ fun AppNavigation(
                     )
                 ) { backStackEntry ->
                     val eventId = backStackEntry.arguments?.getString("eventId")
-                    // PROTEÇÃO DE ROTA (Guard Clause / RBAC)
-                    if (currentRole == AppRole.ADMIN || currentRole == AppRole.DIACONO) {
-                        val viewModel: ReceptionViewModel = hiltViewModel()
-                        LaunchedEffect(eventId) {
-                            viewModel.initReception(eventId, null)
-                        }
-                        ReceptionScreen(
-                            viewModel = viewModel,
-                            onBack = {
-                                navController.navigate("calendar") {
-                                    popUpTo("calendar") { inclusive = true }
-                                }
-                            }
-                        )
-                    } else if (currentRole == AppRole.VIEWER) {
-                        // Redirecionamento forçado para a agenda se não tiver permissão
-                        LaunchedEffect(Unit) {
-                            navController.navigate("calendar") {
-                                popUpTo("reception") { inclusive = true }
-                            }
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
+                    val viewModel: ReceptionViewModel = hiltViewModel()
+                    LaunchedEffect(eventId) {
+                        viewModel.initReception(eventId, null)
                     }
+                    ReceptionScreen(
+                        viewModel = viewModel,
+                        onBack = {
+                            navController.navigate("calendar") {
+                                popUpTo("calendar") { inclusive = true }
+                            }
+                        }
+                    )
                 }
 
                 composable("reports") {
