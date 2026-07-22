@@ -60,6 +60,8 @@ import com.koinonia.igreja.presentation.features.reports.DashboardScreen
 import com.koinonia.igreja.presentation.features.reports.ReportsViewModel
 import com.koinonia.igreja.presentation.features.members.dialog.MinistryManagementDialog
 import com.koinonia.igreja.presentation.features.members.dialog.RoleManagementDialog
+import com.koinonia.igreja.presentation.features.treasury.TreasuryScreen
+import com.koinonia.igreja.presentation.features.unauthorized.UnauthorizedScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -510,39 +512,27 @@ fun AppNavigation(
                 composable("treasury") {
                     if (!currentRole.hasTreasuryAccess) {
                         LaunchedEffect(Unit) {
+                            navController.navigate("unauthorized") {
+                                popUpTo("calendar") { inclusive = false }
+                            }
+                        }
+                    } else {
+                        TreasuryScreen(
+                            onMenuClick = {
+                                scope.launch { drawerState.open() }
+                            }
+                        )
+                    }
+                }
+
+                composable("unauthorized") {
+                    UnauthorizedScreen(
+                        onNavigateToCalendar = {
                             navController.navigate("calendar") {
                                 popUpTo("calendar") { inclusive = true }
                             }
                         }
-                    } else {
-                        Scaffold(
-                            topBar = {
-                                TopAppBar(
-                                    title = { Text("Tesouraria") },
-                                    navigationIcon = {
-                                        IconButton(onClick = {
-                                            scope.launch { drawerState.open() }
-                                        }) {
-                                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                                        }
-                                    }
-                                )
-                            }
-                        ) { paddingValues ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(paddingValues),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Tesouraria", style = MaterialTheme.typography.headlineMedium)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Módulo em construção", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
-                    }
+                    )
                 }
             }
         }
