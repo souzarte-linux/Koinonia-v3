@@ -17,20 +17,21 @@ import com.koinonia.igreja.data.local.entity.MinistryEntity
 fun MinistryRegistrationDialog(
     allMinistries: List<MinistryEntity>,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, parentId: String?, minAge: Int?, maxAge: Int?, minMembershipMonths: Int?, notes: String?) -> Unit
+    onConfirm: (name: String, parentId: String?, minAge: Int?, maxAge: Int?, minMembershipMonths: Int?, notes: String?) -> Unit,
+    ministryToEdit: MinistryEntity? = null
 ) {
-    var name by remember { mutableStateOf("") }
-    var selectedParentId by remember { mutableStateOf<String?>(null) }
+    var name by remember { mutableStateOf(ministryToEdit?.name ?: "") }
+    var selectedParentId by remember { mutableStateOf<String?>(ministryToEdit?.parentMinistryId) }
     var parentDropdownExpanded by remember { mutableStateOf(false) }
-    var minAgeText by remember { mutableStateOf("") }
-    var maxAgeText by remember { mutableStateOf("") }
-    var minMembershipMonthsText by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
+    var minAgeText by remember { mutableStateOf(ministryToEdit?.minAge?.toString() ?: "") }
+    var maxAgeText by remember { mutableStateOf(ministryToEdit?.maxAge?.toString() ?: "") }
+    var minMembershipMonthsText by remember { mutableStateOf(ministryToEdit?.minMembershipMonths?.toString() ?: "") }
+    var notes by remember { mutableStateOf(ministryToEdit?.notes ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cadastrar Ministério", fontWeight = FontWeight.Bold) },
+        title = { Text(if (ministryToEdit != null) "Editar Ministério" else "Cadastrar Ministério", fontWeight = FontWeight.Bold) },
         text = {
             Column(
                 modifier = Modifier

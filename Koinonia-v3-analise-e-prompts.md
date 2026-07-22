@@ -240,6 +240,23 @@ No projeto Koinonia-v3, em AppNavigation.kt, ajuste a bottom bar e o menu latera
 4. Confirme que um Diretor de ministério sem nenhum papel de poder total (do prompt 3.2/3.3) também não vê "Chamada" nem "Métricas" na bottom bar — ele só deve enxergar a Agenda (de onde consegue gerenciar os eventos do próprio ministério, conforme já implementado no prompt 3.3).
 ```
 
+### 3.6 — Prompt: bootstrap seguro do primeiro ADM (caso real: Fernando Anunciação de Souza, cyber.souza@hotmail.com)
+```
+No projeto Koinonia-v3, hoje as telas member_add e member_edit (usadas para corrigir ou completar o cadastro de um Membro, inclusive o campo "E-mail (Usado para login)" e o Histórico Ministerial) exigem currentRole.hasFullAccess para serem acessadas. Isso cria um problema de bootstrap: se nenhum Membro no sistema ainda está corretamente vinculado a uma conta com papel de poder total, ninguém consegue abrir essas telas para conceder esse acesso a si mesmo ou a qualquer outra pessoa — nem mesmo ao primeiro administrador do sistema.
+
+Implemente um mecanismo seguro e temporário de bootstrap do primeiro ADM:
+
+1. Adicione uma constante configurável (ex.: em Constants.kt) BOOTSTRAP_ADMIN_EMAIL = "cyber.souza@hotmail.com" (ou leia de um valor de configuração/BuildConfig, para não deixar hardcoded em produção depois de usado).
+
+2. Em resolveRoleFromMinistries(email) (AuthRepositoryImpl.kt), antes de retornar AppRole.VIEWER no fallback final, adicione uma verificação: se o e-mail informado (comparado sem diferenciar maiúsculas/minúsculas) for igual a BOOTSTRAP_ADMIN_EMAIL E não existir NENHUM Membro no banco local com uma diretoria/cargo ativo de ADMIN, PASTOR ou ANCIAO (ou seja, o sistema ainda não tem nenhum administrador funcional), retorne AppRole.ADMIN para essa sessão. Assim que existir pelo menos um ADM/Pastor/Ancião de verdade no sistema, essa regra deixa de valer automaticamente (a condição "não existe nenhum admin ainda" passa a ser falsa).
+
+3. Ao logar com esse acesso de bootstrap, mostre um aviso não bloqueante na tela (ex.: um banner ou Snackbar) do tipo "Acesso administrativo temporário de configuração inicial. Complete seu cadastro de Membro com um cargo de ADM/Pastor/Ancião/Diácono para manter o acesso permanente.", para deixar claro que isso é uma situação transitória.
+
+4. Documente claramente no código (comentário acima da função) que essa é uma regra de bootstrap, o motivo dela existir (evitar o problema do "ovo e da galinha" no primeiro uso do app), e que ela se autodesativa assim que existir um Membro real com papel administrativo — não é uma conta root permanente.
+
+5. Depois de implementado, o fluxo esperado para o Fernando é: fazer login normalmente com cyber.souza@hotmail.com (vai entrar como ADMIN via bootstrap) → ir em Membros → cadastrar (ou editar, se já existir) o Membro "Fernando Anunciação de Souza" → preencher o campo "E-mail (Usado para login)" com cyber.souza@hotmail.com → na seção de Atuação Ministerial, adicionar um cargo ativo (ex.: "Diácono", ou o cargo que corresponder de fato) sem data de término → salvar. A partir daí, mesmo que a regra de bootstrap seja desativada, o Fernando mantém acesso total pelo cadastro de Membro de verdade.
+```
+
 ---
 
 ## 4) Outros pontos encontrados na revisão geral (para corrigir quando possível)

@@ -61,7 +61,7 @@ data class MemberEntity(
             name = fullName,
             email = email ?: "", // E-mail real do membro
             phone = phone ?: "",
-            role = vehicleType ?: "Membro", // Usado para mapear a função
+            role = "Membro", // Papel padrão
             joinedAt = ZonedDateTime.ofInstant(createdAt.toInstant(), ZoneId.systemDefault()),
             isActive = true
         )
@@ -94,7 +94,7 @@ data class MemberEntity(
                 spouseId = null,
                 spouseName = null,
                 hasVehicle = false,
-                vehicleType = member.role,
+                vehicleType = null,
                 vehicleModel = null,
                 createdAt = Date.from(member.joinedAt.toInstant()),
                 syncPending = syncPending,

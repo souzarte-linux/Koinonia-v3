@@ -2,12 +2,17 @@ package com.koinonia.igreja.presentation.features.members
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.koinonia.igreja.data.local.dao.MemberDao
 import com.koinonia.igreja.data.local.dao.MemberRegistrationDao
 import com.koinonia.igreja.data.local.entity.ChildEntity
 import com.koinonia.igreja.data.local.entity.FamilyEntity
 import com.koinonia.igreja.data.local.entity.MemberEntity
 import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
+import com.koinonia.igreja.data.worker.SyncWorker
+import com.koinonia.igreja.domain.repository.MemberRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,18 +45,21 @@ class MemberRegistrationViewModel @Inject constructor(
     private val registrationDao: MemberRegistrationDao,
     private val memberDao: MemberDao,
     private val ministryDao: com.koinonia.igreja.data.local.dao.MinistryDao,
-    private val authRepository: com.koinonia.igreja.data.repository.AuthRepositoryImpl
+    private val authRepository: com.koinonia.igreja.data.repository.AuthRepositoryImpl,
+    private val memberRepository: MemberRepository,
+    private val workManager: WorkManager
 ) : ViewModel() {
 
     val allMinistries = ministryDao.getAllMinistries()
     val allRoles = ministryDao.getAllRoles()
     val currentRole = authRepository.currentUserRole
 
-    fun addMinistry(name: String, parentId: String?, minAge: Int?, maxAge: Int?, minMembershipMonths: Int?, notes: String?) {
+    fun addMinistry(name: String, parentId: String?, minAge: Int?, maxAge: Int?, minMembershipMonths: Int?, notes: String?, existingId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            val id = name.lowercase().replace(" ", "_").replace(Regex("[^a-z0-9_]"), "")
+            val generatedId = name.lowercase().replace(" ", "_").replace(Regex("[^a-z0-9_]"), "")
+            val finalId = existingId ?: generatedId.ifBlank { UUID.randomUUID().toString() }
             val entity = com.koinonia.igreja.data.local.entity.MinistryEntity(
-                id = id.ifBlank { UUID.randomUUID().toString() },
+                id = finalId,
                 name = name,
                 parentMinistryId = parentId,
                 minAge = minAge,
@@ -63,14 +71,26 @@ class MemberRegistrationViewModel @Inject constructor(
         }
     }
 
-    fun addRole(title: String, tier: com.koinonia.igreja.domain.model.MinistryPositionTier) {
+    fun deleteMinistry(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ministryDao.deleteMinistry(id)
+        }
+    }
+
+    fun addRole(title: String, tier: com.koinonia.igreja.domain.model.MinistryPositionTier, existingId: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             val entity = com.koinonia.igreja.data.local.entity.MinistryRoleEntity(
-                id = UUID.randomUUID().toString(),
+                id = existingId ?: UUID.randomUUID().toString(),
                 title = title,
                 tier = tier
             )
             ministryDao.insertRole(entity)
+        }
+    }
+
+    fun deleteRole(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ministryDao.deleteRole(id)
         }
     }
 
@@ -453,6 +473,17 @@ class MemberRegistrationViewModel @Inject constructor(
                 
                 // Sucesso: dispara atualização do estado para a UI
                 _isSaved.value = true
+
+                // Sincroniza imediatamente com o Supabase
+                try {
+                    memberRepository.syncWithRemote()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                // Enfileira o SyncWorker no WorkManager para garantir a sincronização offline/background
+                val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>().build()
+                workManager.enqueueUniqueWork("SyncWork", ExistingWorkPolicy.KEEP, syncRequest)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
