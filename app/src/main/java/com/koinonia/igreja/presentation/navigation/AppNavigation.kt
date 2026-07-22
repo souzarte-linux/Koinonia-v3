@@ -143,6 +143,9 @@ fun AppNavigation(
             },
             onDeleteMinistry = { id ->
                 memberRegistrationViewModel.deleteMinistry(id)
+            },
+            onResetDefaults = {
+                memberRegistrationViewModel.resetToDefaultMinistriesAndRoles()
             }
         )
     }
@@ -157,6 +160,9 @@ fun AppNavigation(
             },
             onDeleteRole = { id ->
                 memberRegistrationViewModel.deleteRole(id)
+            },
+            onResetDefaults = {
+                memberRegistrationViewModel.resetToDefaultMinistriesAndRoles()
             }
         )
     }

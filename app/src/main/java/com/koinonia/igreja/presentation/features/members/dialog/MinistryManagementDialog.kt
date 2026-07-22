@@ -21,11 +21,36 @@ fun MinistryManagementDialog(
     allMinistries: List<MinistryEntity>,
     onDismiss: () -> Unit,
     onSaveMinistry: (name: String, parentId: String?, minAge: Int?, maxAge: Int?, minMembershipMonths: Int?, notes: String?, existingId: String?) -> Unit,
-    onDeleteMinistry: (id: String) -> Unit
+    onDeleteMinistry: (id: String) -> Unit,
+    onResetDefaults: (() -> Unit)? = null
 ) {
     var editingMinistry by remember { mutableStateOf<MinistryEntity?>(null) }
     var showRegistrationDialog by remember { mutableStateOf(false) }
     var deletingMinistryId by remember { mutableStateOf<String?>(null) }
+    var showResetConfirmation by remember { mutableStateOf(false) }
+
+    if (showResetConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmation = false },
+            title = { Text("Restaurar Padrões IASD", fontWeight = FontWeight.Bold) },
+            text = { Text("Deseja substituir todos os ministérios atuais pela lista oficial de 26 Ministérios da Igreja Adventista do Sétimo Dia?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onResetDefaults?.invoke()
+                        showResetConfirmation = false
+                    }
+                ) {
+                    Text("Restaurar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirmation = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     if (showRegistrationDialog) {
         MinistryRegistrationDialog(
@@ -164,6 +189,13 @@ fun MinistryManagementDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Fechar")
+            }
+        },
+        dismissButton = {
+            if (onResetDefaults != null) {
+                TextButton(onClick = { showResetConfirmation = true }) {
+                    Text("Padrões IASD")
+                }
             }
         }
     )
