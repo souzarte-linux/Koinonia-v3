@@ -92,11 +92,15 @@ class ReceptionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val finalEventId = if (eventId == null || eventId == "evento_hoje") {
-                    val todayEvents = eventDao.getAllEvents().first()
+                    val todayEvents = try { eventDao.getAllEvents().firstOrNull() ?: emptyList() } catch (e: Exception) { emptyList() }
                     val today = LocalDate.now()
                     val todayEvent = todayEvents.firstOrNull { ev ->
-                        val evDate = ev.startTime.toInstant().atZone(ZoneId.of("America/Bahia")).toLocalDate()
-                        evDate == today
+                        try {
+                            val evDate = ev.startTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                            evDate == today
+                        } catch (e: Exception) {
+                            false
+                        }
                     }
                     todayEvent?.id ?: "evento_hoje"
                 } else {
@@ -104,8 +108,8 @@ class ReceptionViewModel @Inject constructor(
                 }
 
                 val finalStartTime = if (startTime == null) {
-                    val event = eventDao.getEventById(finalEventId)
-                    event?.startTime?.toInstant()?.atZone(ZoneId.of("America/Bahia")) ?: ZonedDateTime.now()
+                    val event = try { eventDao.getEventById(finalEventId) } catch (e: Exception) { null }
+                    event?.startTime?.toInstant()?.atZone(ZoneId.systemDefault()) ?: ZonedDateTime.now()
                 } else {
                     startTime
                 }
@@ -113,17 +117,17 @@ class ReceptionViewModel @Inject constructor(
                 _currentEventId.value = finalEventId
                 _currentEventStartTime.value = finalStartTime
 
-                val event = eventDao.getEventById(finalEventId)
+                val event = try { eventDao.getEventById(finalEventId) } catch (e: Exception) { null }
                 if (event != null) {
-                    currentEventTitle.value = "Recepção: ${event.title}"
-                } else if (finalEventId.startsWith("ord_")) {
-                    currentEventTitle.value = "Recepção: Culto Ordinário"
+                    currentEventTitle.value = "Chamada: ${event.title}"
                 } else {
-                    currentEventTitle.value = "Recepção: Culto Especial"
+                    currentEventTitle.value = "Chamada de Membros"
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                currentEventTitle.value = "Recepção: Culto Ordinário"
+                _currentEventId.value = eventId ?: "evento_hoje"
+                _currentEventStartTime.value = startTime ?: ZonedDateTime.now()
+                currentEventTitle.value = "Chamada de Membros"
             }
         }
     }
