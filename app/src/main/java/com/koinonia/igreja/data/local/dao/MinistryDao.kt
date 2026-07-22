@@ -25,6 +25,9 @@ interface MinistryDao {
     @Query("DELETE FROM ministries WHERE id = :id")
     suspend fun deleteMinistry(id: String)
 
+    @Query("DELETE FROM ministries")
+    suspend fun deleteAllMinistries()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRole(role: MinistryRoleEntity)
 
@@ -36,4 +39,7 @@ interface MinistryDao {
 
     @Query("DELETE FROM ministry_roles WHERE id = :id")
     suspend fun deleteRole(id: String)
+
+    @Query("DELETE FROM ministry_roles")
+    suspend fun deleteAllRoles()
 }

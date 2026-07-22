@@ -94,6 +94,68 @@ class MemberRegistrationViewModel @Inject constructor(
         }
     }
 
+    fun resetToDefaultMinistriesAndRoles() {
+        viewModelScope.launch(Dispatchers.IO) {
+            ministryDao.deleteAllMinistries()
+            ministryDao.deleteAllRoles()
+
+            val defaultMinistries = listOf(
+                com.koinonia.igreja.data.local.entity.MinistryEntity("mja", "Ministério Jovem Adventista (MJA)", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("aventureiros", "Aventureiros", "mja", 6, 9, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("desbravadores", "Desbravadores", "mja", 10, 15, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("embaixadores", "Ministério de Embaixadores", "mja", 16, 21, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("jovens_adultos", "Ministério de Jovens Adultos", "mja", 22, 30, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("universitarios", "Ministério de Universitários", "mja", 16, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("crianca", "Ministério da Criança", null, null, null, 6, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("adolescente", "Ministério do Adolescente", null, 13, 16, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("escola_sabatina", "Escola Sabatina", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("pessoal", "Ministério Pessoal", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("homens_adventistas", "Sociedade de Homens Adventistas", "pessoal", null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("classe_biblica", "Classe Bíblica", "pessoal", null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("asa", "Ação Solidária Adventista (ASA / Dorcas)", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("familia", "Ministério da Família", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("mulher", "Ministério da Mulher", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("map", "Ministério Adventista das Possibilidades (MAP) e Surdos", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("saude_temperanca", "Ministério de Saúde e Temperança", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("musica", "Ministério da Música", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("mordomia", "Ministério de Mordomia Cristã", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("publicacoes", "Ministério de Publicações", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("comunicacao", "Comunicação", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("liberdade_religiosa", "Assuntos Públicos e Liberdade Religiosa", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("educacao", "Educação", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("espirito_profecia", "Escritos do Espírito de Profecia", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("recepcao", "Ministério da Recepção", null, null, null, null, null),
+                com.koinonia.igreja.data.local.entity.MinistryEntity("diaconato", "Diaconato", null, null, null, null, null)
+            )
+            ministryDao.insertMinistries(defaultMinistries)
+
+            val defaultRoles = listOf(
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_anciao", "Ancião / Anciã", com.koinonia.igreja.domain.model.MinistryPositionTier.DIRECTOR),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_pastor", "Pastor(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.DIRECTOR),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_diretor", "Diretor(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.DIRECTOR),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_diretor_assoc", "Diretor(a) Associado(a) / Vice-Diretor(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.DIRECTOR),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_coordenador", "Coordenador(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.DIRECTOR),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_lider", "Líder", com.koinonia.igreja.domain.model.MinistryPositionTier.DIRECTOR),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_tesoureiro", "Tesoureiro(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.TREASURY),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_sec_tesoureiro", "Secretário(a)-Tesoureiro(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.TREASURY),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_sec_tesoureiro_assoc", "Secretário(a)-Tesoureiro(a) Associado(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.TREASURY),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_secretario", "Secretário(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_secretario_assoc", "Secretário(a) Associado(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_conselheiro", "Conselheiro(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_instrutor", "Instrutor(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_professor", "Professor(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_diretor_musica", "Diretor(a) de Música", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_pianista", "Pianista/Organista", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_musico", "Músico(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_diacono", "Diácono / Diaconisa", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_comissao", "Membro da Comissão/Conselho", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_colportor", "Colportor(a)-Evangelista", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT),
+                com.koinonia.igreja.data.local.entity.MinistryRoleEntity("role_bibliotecario", "Bibliotecário(a)", com.koinonia.igreja.domain.model.MinistryPositionTier.SUPPORT)
+            )
+            ministryDao.insertRoles(defaultRoles)
+        }
+    }
+
     val roleOptions = listOf(
         // DIRECTOR
         "Diretor(a)", "Diretor(a) Associado(a) / Vice-Diretor(a)", "Coordenador(a)", "Líder",

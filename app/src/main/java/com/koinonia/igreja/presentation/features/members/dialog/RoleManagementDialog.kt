@@ -22,11 +22,36 @@ fun RoleManagementDialog(
     allRoles: List<MinistryRoleEntity>,
     onDismiss: () -> Unit,
     onSaveRole: (title: String, tier: MinistryPositionTier, existingId: String?) -> Unit,
-    onDeleteRole: (id: String) -> Unit
+    onDeleteRole: (id: String) -> Unit,
+    onResetDefaults: (() -> Unit)? = null
 ) {
     var editingRole by remember { mutableStateOf<MinistryRoleEntity?>(null) }
     var showRegistrationDialog by remember { mutableStateOf(false) }
     var deletingRoleId by remember { mutableStateOf<String?>(null) }
+    var showResetConfirmation by remember { mutableStateOf(false) }
+
+    if (showResetConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmation = false },
+            title = { Text("Restaurar Padrões IASD", fontWeight = FontWeight.Bold) },
+            text = { Text("Deseja substituir todos os cargos atuais pela lista oficial de Cargos da Igreja Adventista do Sétimo Dia?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onResetDefaults?.invoke()
+                        showResetConfirmation = false
+                    }
+                ) {
+                    Text("Restaurar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirmation = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     if (showRegistrationDialog) {
         RoleRegistrationDialog(
@@ -166,6 +191,13 @@ fun RoleManagementDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Fechar")
+            }
+        },
+        dismissButton = {
+            if (onResetDefaults != null) {
+                TextButton(onClick = { showResetConfirmation = true }) {
+                    Text("Padrões IASD")
+                }
             }
         }
     )
