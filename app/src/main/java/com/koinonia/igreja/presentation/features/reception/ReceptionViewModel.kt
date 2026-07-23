@@ -259,6 +259,78 @@ class ReceptionViewModel @Inject constructor(
         }
     }
 
+    // Estado do Modal de Edição de Presença
+    val editingMemberState = MutableStateFlow<MemberAttendanceState?>(null)
+
+    fun startEditing(state: MemberAttendanceState) {
+        editingMemberState.value = state
+    }
+
+    fun dismissEditing() {
+        editingMemberState.value = null
+    }
+
+    fun saveCustomAttendance(
+        member: MemberEntity,
+        status: String,
+        customHour: Int,
+        customMinute: Int,
+        customLateMins: Int
+    ) {
+        viewModelScope.launch {
+            val eventId = _currentEventId.value ?: return@launch
+
+            when (status) {
+                "NONE" -> {
+                    attendanceRepository.deletePresence(member.id, eventId)
+                }
+                "ABSENT" -> {
+                    attendanceRepository.saveCustomAttendanceRecord(
+                        memberId = member.id,
+                        eventId = eventId,
+                        isAbsent = true,
+                        isLate = false,
+                        lateDurationMins = 0,
+                        arrivalTime = null
+                    )
+                }
+                "PRESENT" -> {
+                    val cal = java.util.Calendar.getInstance()
+                    cal.set(java.util.Calendar.HOUR_OF_DAY, customHour)
+                    cal.set(java.util.Calendar.MINUTE, customMinute)
+                    cal.set(java.util.Calendar.SECOND, 0)
+                    cal.set(java.util.Calendar.MILLISECOND, 0)
+
+                    attendanceRepository.saveCustomAttendanceRecord(
+                        memberId = member.id,
+                        eventId = eventId,
+                        isAbsent = false,
+                        isLate = false,
+                        lateDurationMins = 0,
+                        arrivalTime = cal.time
+                    )
+                }
+                "LATE" -> {
+                    val cal = java.util.Calendar.getInstance()
+                    cal.set(java.util.Calendar.HOUR_OF_DAY, customHour)
+                    cal.set(java.util.Calendar.MINUTE, customMinute)
+                    cal.set(java.util.Calendar.SECOND, 0)
+                    cal.set(java.util.Calendar.MILLISECOND, 0)
+
+                    attendanceRepository.saveCustomAttendanceRecord(
+                        memberId = member.id,
+                        eventId = eventId,
+                        isAbsent = false,
+                        isLate = true,
+                        lateDurationMins = if (customLateMins > 0) customLateMins else 15,
+                        arrivalTime = cal.time
+                    )
+                }
+            }
+            editingMemberState.value = null
+        }
+    }
+
     fun manuallyFinalizeEvent() {
         viewModelScope.launch {
             val eventId = _currentEventId.value ?: return@launch

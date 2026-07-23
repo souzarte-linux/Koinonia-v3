@@ -12,10 +12,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+import com.koinonia.igreja.presentation.components.AppTopBar
+import com.koinonia.igreja.data.local.entity.MemberEntity
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onBack: () -> Unit,
+    onMenuClick: (() -> Unit)? = null,
+    currentMember: MemberEntity? = null,
+    onProfileClick: (() -> Unit)? = null,
     viewModel: ReportsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -29,16 +35,12 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Inteligência e Relatórios") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
-                    }
-                }
+            AppTopBar(
+                title = "Métricas & Relatórios",
+                currentMember = currentMember,
+                onMenuClick = onMenuClick,
+                onBackClick = if (onMenuClick == null) onBack else null,
+                onProfileClick = onProfileClick
             )
         },
         modifier = modifier.fillMaxSize()

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -137,24 +138,20 @@ fun FamilyAndVisitorDialog(
                                         )
                                     }
 
-                                    // Botão Presente com Atraso (Laranja)
-                                    IconButton(
-                                        onClick = {
-                                            if (relative.isPresent && relative.isLate) {
-                                                viewModel.setAttendanceState(member, "NONE")
-                                            } else {
-                                                viewModel.setAttendanceState(member, "LATE")
-                                            }
-                                        },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Schedule,
-                                            contentDescription = "Atrasado",
-                                            tint = if (relative.isPresent && relative.isLate) Color(0xFFEF6C00) else Color.LightGray,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
+                                     // Botão 2: Editar Chamada / Horário (Azul/Grafite)
+                                     IconButton(
+                                         onClick = {
+                                             viewModel.startEditing(relative)
+                                         },
+                                         modifier = Modifier.size(36.dp)
+                                     ) {
+                                         Icon(
+                                             imageVector = Icons.Default.Edit,
+                                             contentDescription = "Editar Chamada",
+                                             tint = if (relative.isPresent || relative.isAbsent) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                             modifier = Modifier.size(20.dp)
+                                         )
+                                     }
 
                                     // Botão Ausente (Vermelho)
                                     IconButton(

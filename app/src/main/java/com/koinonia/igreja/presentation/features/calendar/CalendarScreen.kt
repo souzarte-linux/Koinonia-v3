@@ -41,6 +41,9 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlinx.coroutines.launch
 
+import com.koinonia.igreja.presentation.components.AppTopBar
+import com.koinonia.igreja.data.local.entity.MemberEntity
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
@@ -48,6 +51,8 @@ fun CalendarScreen(
     onNavigateToCreateEvent: () -> Unit = {},
     onNavigateToReception: (String) -> Unit = {},
     onMenuClick: (() -> Unit)? = null,
+    currentMember: MemberEntity? = null,
+    onProfileClick: (() -> Unit)? = null,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val selectedDate by viewModel.selectedDate.collectAsState()
@@ -308,25 +313,12 @@ fun CalendarScreen(
 
     Scaffold(
         topBar = { 
-            TopAppBar(
-                title = { Text("Agenda") },
-                navigationIcon = {
-                    if (onMenuClick != null) {
-                        IconButton(onClick = onMenuClick) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu"
-                            )
-                        }
-                    } else {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Voltar"
-                            )
-                        }
-                    }
-                }
+            AppTopBar(
+                title = "Agenda",
+                currentMember = currentMember,
+                onMenuClick = onMenuClick,
+                onBackClick = if (onMenuClick == null) onBack else null,
+                onProfileClick = onProfileClick
             )
         },
         floatingActionButton = {

@@ -12,7 +12,7 @@ object SupabaseClientProvider {
     val instance: SupabaseClient by lazy {
         createSupabaseClient(
             supabaseUrl = Constants.SUPABASE_URL,
-            supabaseKey = Constants.SUPABASE_ANON_KEY
+            supabaseKey = Constants.SUPABASE_SERVICE_ROLE_KEY
         ) {
             install(Auth)
             install(Postgrest)

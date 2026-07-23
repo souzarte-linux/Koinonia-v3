@@ -50,6 +50,9 @@ class AuthRepositoryImpl @Inject constructor(
     private val _isBootstrapAdmin = MutableStateFlow(false)
     val isBootstrapAdmin: StateFlow<Boolean> = _isBootstrapAdmin.asStateFlow()
 
+    private val _currentMember = MutableStateFlow<com.koinonia.igreja.data.local.entity.MemberEntity?>(null)
+    val currentMember: StateFlow<com.koinonia.igreja.data.local.entity.MemberEntity?> = _currentMember.asStateFlow()
+
     init {
         val email = getCurrentUserEmail()
         if (email != null) {
@@ -62,10 +65,37 @@ class AuthRepositoryImpl @Inject constructor(
                 val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
                 _directedMinistries.value = directorships
                 
+                loadCurrentMember(email)
+                
                 _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             }
         } else {
             _authResolutionState.value = AuthResolutionState.UNAUTHENTICATED
+        }
+    }
+
+    suspend fun loadCurrentMember(email: String) {
+        val member = memberDao.get().getMemberByEmail(email)
+        if (member != null) {
+            _currentMember.value = member
+        } else {
+            val fallbackName = email.substringBefore("@").replace(".", " ").replace("_", " ")
+                .split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+            _currentMember.value = com.koinonia.igreja.data.local.entity.MemberEntity(
+                fullName = if (fallbackName.isBlank()) "Usuário Koinonia" else fallbackName,
+                email = email
+            )
+        }
+    }
+
+    suspend fun updateCurrentMemberProfile(updated: com.koinonia.igreja.data.local.entity.MemberEntity): Result<Unit> {
+        return try {
+            memberDao.get().insertMember(updated.copy(syncPending = true, updatedAt = java.util.Date()))
+            _currentMember.value = updated
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
         }
     }
 
@@ -129,6 +159,7 @@ class AuthRepositoryImpl @Inject constructor(
             // 3. Atualiza o estado global
             _currentUserRole.value = role
             _directedMinistries.value = directorships
+            loadCurrentMember(resolvedEmail)
             _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
             
             Result.success(role)
@@ -136,6 +167,25 @@ class AuthRepositoryImpl @Inject constructor(
             e.printStackTrace()
             Result.failure(e)
         }
+    }
+
+    suspend fun authenticateBiometricSession(): Result<AppRole> {
+        val email = getCurrentUserEmail()
+        if (email != null && isSessionActive()) {
+            return try {
+                val role = resolveRoleFromMinistries(email)
+                val directorships = getMinistryDirectorshipsUseCase.get().invoke(email)
+                _currentUserRole.value = role
+                _directedMinistries.value = directorships
+                loadCurrentMember(email)
+                _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
+                Result.success(role)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Result.failure(e)
+            }
+        }
+        return Result.failure(Exception("Sessão expirada ou inexistente. Por favor, faça login com sua senha."))
     }
 
     suspend fun logout() {

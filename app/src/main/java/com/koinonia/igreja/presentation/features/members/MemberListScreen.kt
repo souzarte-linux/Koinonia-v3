@@ -18,6 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+import com.koinonia.igreja.presentation.components.AppTopBar
+import com.koinonia.igreja.data.local.entity.MemberEntity
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemberListScreen(
@@ -25,6 +28,8 @@ fun MemberListScreen(
     onEditMember: (String) -> Unit,
     onNavigateToDetails: (String) -> Unit,
     onMenuClick: () -> Unit,
+    currentMember: MemberEntity? = null,
+    onProfileClick: (() -> Unit)? = null,
     viewModel: MemberListViewModel
 ) {
     val members by viewModel.membersList.collectAsState(initial = emptyList())
@@ -33,9 +38,9 @@ fun MemberListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    if (isSearching) {
+            if (isSearching) {
+                TopAppBar(
+                    title = {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { viewModel.searchQuery.value = it },
@@ -47,36 +52,33 @@ fun MemberListScreen(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
-                    } else {
-                        Column {
-                            Text("Membros")
-                            Text(
-                                text = "${members.size} membros cadastrados",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        isSearching = !isSearching
-                        if (!isSearching) {
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            isSearching = false
                             viewModel.searchQuery.value = ""
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = "Fechar busca")
                         }
-                    }) {
-                        Icon(
-                            imageVector = if (isSearching) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = if (isSearching) "Fechar pesquisa" else "Pesquisar"
-                        )
                     }
-                }
-            )
+                )
+            } else {
+                TopAppBar(
+                    title = {
+                        AppTopBar(
+                            title = "Membros (${members.size})",
+                            currentMember = currentMember,
+                            onMenuClick = onMenuClick,
+                            onProfileClick = onProfileClick
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Buscar Membro")
+                        }
+                    }
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToRegistration) {

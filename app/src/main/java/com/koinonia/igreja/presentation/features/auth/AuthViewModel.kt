@@ -33,23 +33,32 @@ class AuthViewModel @Inject constructor(
     val authResolutionState = authRepository.authResolutionState
     val directedMinistries = authRepository.directedMinistries
     val isBootstrapAdmin = authRepository.isBootstrapAdmin
+    val currentMember = authRepository.currentMember
 
     private val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
     val savedEmail = MutableStateFlow(sharedPreferences.getString("saved_email", "") ?: "")
     val rememberEmail = MutableStateFlow(sharedPreferences.getBoolean("remember_email", false))
+    val isBiometricEnabled = MutableStateFlow(sharedPreferences.getBoolean("biometric_enabled", false))
 
-    fun saveRememberedEmail(email: String, remember: Boolean) {
+    fun setBiometricEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("biometric_enabled", enabled).apply()
+        isBiometricEnabled.value = enabled
+    }
+
+    fun saveRememberedCredentials(email: String, pass: String, remember: Boolean) {
         sharedPreferences.edit().apply {
             putBoolean("remember_email", remember)
-            if (remember) {
+            if (remember || isBiometricEnabled.value) {
                 putString("saved_email", email)
+                putString("saved_pass", pass)
             } else {
                 putString("saved_email", "")
+                putString("saved_pass", "")
             }
             apply()
         }
-        savedEmail.value = if (remember) email else ""
+        savedEmail.value = if (remember || isBiometricEnabled.value) email else ""
         rememberEmail.value = remember
     }
 
@@ -59,9 +68,33 @@ class AuthViewModel @Inject constructor(
             val result = authRepository.login(email, pass)
             
             result.onSuccess { role ->
+                saveRememberedCredentials(email, pass, rememberEmail.value)
                 _authState.value = AuthState.Success(role)
             }.onFailure { error ->
                 _authState.value = AuthState.Error(error.localizedMessage ?: "Erro desconhecido")
+            }
+        }
+    }
+
+    fun loginWithBiometrics() {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val bioResult = authRepository.authenticateBiometricSession()
+            bioResult.onSuccess { role ->
+                _authState.value = AuthState.Success(role)
+            }.onFailure {
+                val pass = sharedPreferences.getString("saved_pass", "") ?: ""
+                val email = savedEmail.value
+                if (email.isNotBlank() && pass.isNotBlank()) {
+                    val loginResult = authRepository.login(email, pass)
+                    loginResult.onSuccess { role ->
+                        _authState.value = AuthState.Success(role)
+                    }.onFailure { err ->
+                        _authState.value = AuthState.Error("Sessão expirada. Por favor, entre com sua senha para renovar.")
+                    }
+                } else {
+                    _authState.value = AuthState.Error("Por favor, faça login com sua senha uma vez para registrar a biometria.")
+                }
             }
         }
     }
@@ -132,6 +165,16 @@ class AuthViewModel @Inject constructor(
 
     suspend fun checkIfMustChangePassword(): Boolean {
         return authRepository.mustChangePassword()
+    }
+
+    fun updateCurrentMemberProfile(
+        updatedMember: com.koinonia.igreja.data.local.entity.MemberEntity,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = authRepository.updateCurrentMemberProfile(updatedMember)
+            onResult(result.isSuccess)
+        }
     }
 
     fun resetAuthState() {
