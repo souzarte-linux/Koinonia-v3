@@ -32,6 +32,11 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.Facebook
 import io.github.jan.supabase.auth.providers.Apple
 
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
+import androidx.compose.material.icons.filled.Fingerprint
+import com.koinonia.igreja.core.biometric.BiometricPromptManager
+
 @Composable
 fun LoginScreen(
     onNavigateToHome: (AppRole) -> Unit,
@@ -39,6 +44,11 @@ fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val activity = context as? FragmentActivity
+    val biometricPromptManager = remember(context) { BiometricPromptManager(context.applicationContext) }
+    val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsState()
+
     val savedEmail by viewModel.savedEmail.collectAsState()
     val rememberEmail by viewModel.rememberEmail.collectAsState()
 
@@ -63,6 +73,25 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
             onNavigateToHome((authState as AuthState.Success).role)
+        }
+    }
+
+    fun triggerBiometricAuth() {
+        if (activity != null && biometricPromptManager.isBiometricAvailable()) {
+            biometricPromptManager.showBiometricPrompt(
+                activity = activity,
+                onSuccess = {
+                    viewModel.loginWithBiometrics()
+                },
+                onError = { /* Exibe erro apenas se necessário */ }
+            )
+        }
+    }
+
+    // Dispara validação por digital ao abrir se estiver ativada e houver usuário salvo
+    LaunchedEffect(isBiometricEnabled, savedEmail) {
+        if (isBiometricEnabled && savedEmail.isNotBlank() && !isSignUpMode) {
+            triggerBiometricAuth()
         }
     }
 
@@ -118,7 +147,7 @@ fun LoginScreen(
                 keyboardActions = KeyboardActions(
                     onDone = {
                         if (email.isNotBlank() && password.isNotBlank() && authState !is AuthState.Loading) {
-                            viewModel.saveRememberedEmail(email, rememberMe)
+                            viewModel.saveRememberedCredentials(email, password, rememberMe)
                             if (isSignUpMode) {
                                 viewModel.signUp(email, password)
                             } else {
@@ -185,7 +214,7 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    viewModel.saveRememberedEmail(email, rememberMe)
+                    viewModel.saveRememberedCredentials(email, password, rememberMe)
                     if (isSignUpMode) {
                         viewModel.signUp(email, password)
                     } else {
@@ -207,6 +236,31 @@ fun LoginScreen(
                     Text(
                         text = if (isSignUpMode) "Cadastrar" else "Entrar",
                         fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            if (!isSignUpMode && biometricPromptManager.isBiometricAvailable()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { triggerBiometricAuth() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Fingerprint,
+                        contentDescription = "Impressão Digital",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Entrar com Impressão Digital",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }

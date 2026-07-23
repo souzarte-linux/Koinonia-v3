@@ -63,6 +63,10 @@ import com.koinonia.igreja.presentation.features.members.dialog.RoleManagementDi
 import com.koinonia.igreja.presentation.features.treasury.TreasuryScreen
 import com.koinonia.igreja.presentation.features.unauthorized.UnauthorizedScreen
 
+import com.koinonia.igreja.presentation.components.UserProfileEditDialog
+import com.koinonia.igreja.core.biometric.BiometricPromptManager
+import androidx.compose.ui.platform.LocalContext
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(
@@ -74,10 +78,16 @@ fun AppNavigation(
     val authState by authViewModel.authState.collectAsState()
     val authResolutionState by authViewModel.authResolutionState.collectAsState()
     val directedMinistries by authViewModel.directedMinistries.collectAsState()
+    val currentMember by authViewModel.currentMember.collectAsState()
+    val isBiometricEnabled by authViewModel.isBiometricEnabled.collectAsState()
     val memberRegistrationViewModel: MemberRegistrationViewModel = hiltViewModel()
+
+    val context = LocalContext.current
+    val biometricPromptManager = remember(context) { BiometricPromptManager(context.applicationContext) }
 
     var showMinistryManagementDialog by remember { mutableStateOf(false) }
     var showRoleManagementDialog by remember { mutableStateOf(false) }
+    var showUserProfileEditDialog by remember { mutableStateOf(false) }
 
     // Determina a rota atual para exibição da BottomBar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -165,6 +175,21 @@ fun AppNavigation(
             },
             onResetDefaults = {
                 memberRegistrationViewModel.resetToDefaultMinistriesAndRoles()
+            }
+        )
+    }
+
+    if (showUserProfileEditDialog) {
+        UserProfileEditDialog(
+            member = currentMember,
+            isBiometricAvailable = biometricPromptManager.isBiometricAvailable(),
+            isBiometricEnabled = isBiometricEnabled,
+            onDismiss = { showUserProfileEditDialog = false },
+            onSaveProfile = { updatedMember, enableBiometric ->
+                authViewModel.setBiometricEnabled(enableBiometric)
+                authViewModel.updateCurrentMemberProfile(updatedMember) { success ->
+                    showUserProfileEditDialog = false
+                }
             }
         )
     }
@@ -356,6 +381,10 @@ fun AppNavigation(
                                 onMenuClick = {
                                     scope.launch { drawerState.open() }
                                 },
+                                currentMember = currentMember,
+                                onProfileClick = {
+                                    showUserProfileEditDialog = true
+                                },
                                 onEditMember = { memberId ->
                                     navController.navigate("member_edit/$memberId")
                                 },
@@ -432,6 +461,10 @@ fun AppNavigation(
                     val hasDrawerItems = currentRole.hasFullAccess || currentRole.hasTreasuryAccess
                     CalendarScreen(
                         viewModel = viewModel,
+                        currentMember = currentMember,
+                        onProfileClick = {
+                            showUserProfileEditDialog = true
+                        },
                         onMenuClick = if (hasDrawerItems) {
                             { scope.launch { drawerState.open() } }
                         } else null,
@@ -500,6 +533,13 @@ fun AppNavigation(
                         val viewModel: ReportsViewModel = hiltViewModel()
                         DashboardScreen(
                             viewModel = viewModel,
+                            currentMember = currentMember,
+                            onProfileClick = {
+                                showUserProfileEditDialog = true
+                            },
+                            onMenuClick = {
+                                scope.launch { drawerState.open() }
+                            },
                             onBack = {
                                 navController.navigate("calendar") {
                                     popUpTo("calendar") { inclusive = true }
@@ -518,6 +558,10 @@ fun AppNavigation(
                         }
                     } else {
                         TreasuryScreen(
+                            currentMember = currentMember,
+                            onProfileClick = {
+                                showUserProfileEditDialog = true
+                            },
                             onMenuClick = {
                                 scope.launch { drawerState.open() }
                             }

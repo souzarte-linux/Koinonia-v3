@@ -103,6 +103,35 @@ class AttendanceRepositoryImpl @Inject constructor(
         triggerSync()
     }
 
+    suspend fun saveCustomAttendanceRecord(
+        memberId: String,
+        eventId: String,
+        isAbsent: Boolean,
+        isLate: Boolean,
+        lateDurationMins: Int,
+        arrivalTime: java.util.Date?
+    ) {
+        if (arrivalTime == null && !isAbsent && !isLate) {
+            attendanceDao.deleteAttendance(memberId, eventId)
+        } else {
+            val attendance = AttendanceEntity(
+                memberId = memberId,
+                eventId = eventId,
+                arrivalTime = if (isAbsent) null else (arrivalTime ?: java.util.Date()),
+                isLate = if (isAbsent) false else isLate,
+                lateDurationMins = if (isAbsent || !isLate) 0 else lateDurationMins,
+                isAbsent = isAbsent,
+                absenceReason = if (isAbsent) "Ausente" else null,
+                absenceReasonDetails = if (isAbsent) "Marcado como ausente" else null,
+                contactResponsible = null,
+                contactMethod = null,
+                syncPending = true
+            )
+            attendanceDao.insertAttendance(attendance)
+        }
+        triggerSync()
+    }
+
     private fun triggerSync() {
         val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>().build()
         // KEEP garante que se já houver um worker de sync rodando, não criaremos outro atoa.

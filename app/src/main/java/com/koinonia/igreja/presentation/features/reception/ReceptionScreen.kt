@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.koinonia.igreja.presentation.features.reception.components.EditAttendanceDialog
 import com.koinonia.igreja.presentation.features.reception.components.FamilyAndVisitorDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +33,7 @@ fun ReceptionScreen(
     val members by viewModel.membersList.collectAsState(initial = emptyList())
     val showPopup by viewModel.showFamilyPopup.collectAsState()
     val currentTitle by viewModel.currentEventTitle.collectAsState()
+    val editingState by viewModel.editingMemberState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -136,20 +139,16 @@ fun ReceptionScreen(
                                         )
                                     }
 
-                                    // Botão Presente com Atraso (Laranja)
+                                    // Botão 2: Editar Chamada / Horário (Azul/Grafite)
                                     IconButton(
                                         onClick = {
-                                            if (memberState.isPresent && memberState.isLate) {
-                                                viewModel.setAttendanceState(member, "NONE")
-                                            } else {
-                                                viewModel.setAttendanceState(member, "LATE")
-                                            }
+                                            viewModel.startEditing(memberState)
                                         }
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Schedule,
-                                            contentDescription = "Atrasado",
-                                            tint = if (memberState.isPresent && memberState.isLate) Color(0xFFEF6C00) else Color.LightGray
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Editar Chamada",
+                                            tint = if (memberState.isPresent || memberState.isAbsent) MaterialTheme.colorScheme.primary else Color.LightGray
                                         )
                                     }
 
@@ -177,6 +176,23 @@ fun ReceptionScreen(
                 }
             }
         }
+    }
+
+    // Modal de Edição de Horário / Presença
+    editingState?.let { targetState ->
+        EditAttendanceDialog(
+            attendanceState = targetState,
+            onDismiss = { viewModel.dismissEditing() },
+            onSave = { status, hour, minute, lateMins ->
+                viewModel.saveCustomAttendance(
+                    member = targetState.member,
+                    status = status,
+                    customHour = hour,
+                    customMinute = minute,
+                    customLateMins = lateMins
+                )
+            }
+        )
     }
 
     // Aciona o Modal Híbrido (Visitantes + Família)

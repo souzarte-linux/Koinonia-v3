@@ -12,24 +12,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
+import com.koinonia.igreja.presentation.components.AppTopBar
+import com.koinonia.igreja.data.local.entity.MemberEntity
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TreasuryScreen(
     onMenuClick: () -> Unit,
+    currentMember: MemberEntity? = null,
+    onProfileClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Tesouraria") },
-                navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Menu Lateral"
-                        )
-                    }
-                }
+            AppTopBar(
+                title = "Tesouraria",
+                currentMember = currentMember,
+                onMenuClick = onMenuClick,
+                onProfileClick = onProfileClick
             )
         },
         modifier = modifier.fillMaxSize()
