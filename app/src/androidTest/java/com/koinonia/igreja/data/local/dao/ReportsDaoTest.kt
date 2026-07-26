@@ -92,8 +92,9 @@ class ReportsDaoTest {
             responsibleId = "resp_1"
         )
 
-        val pending = reportsDao.getPendingContactsForEvent("ev_fu").first()
-        assertNotNull(pending[0])
-        assertEquals("Saúde", pending[0].absenceReason)
+        val attendances = attendanceDao.getAttendanceForEvent("ev_fu").first()
+        assertEquals(1, attendances.size)
+        assertEquals("Saúde", attendances[0].absenceReason)
+        assertEquals("resp_1", attendances[0].contactResponsible)
     }
 }
