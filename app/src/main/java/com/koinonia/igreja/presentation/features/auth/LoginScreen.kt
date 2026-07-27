@@ -109,7 +109,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = if (isSignUpMode) "Criar Nova Conta" else "Ministério do Diácono",
+                text = if (isSignUpMode) "Criar Nova Conta" else "Gestor Eclesiástico Koinonia",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

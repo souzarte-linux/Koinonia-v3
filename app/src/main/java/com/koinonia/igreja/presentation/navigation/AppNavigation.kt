@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.CorporateFare
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -266,6 +268,23 @@ fun AppNavigation(
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
                     }
+
+                    Spacer(modifier = Modifier.weight(1f))
+                    HorizontalDivider(
+                        color = Color.LightGray,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Sair do App", color = MaterialTheme.colorScheme.error) },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            authViewModel.logout()
+                        },
+                        icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sair do App", tint = MaterialTheme.colorScheme.error) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }

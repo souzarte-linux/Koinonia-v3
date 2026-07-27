@@ -59,7 +59,7 @@ class E2EAuthFlowTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Ministério do Diácono").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Gestor Eclesiástico Koinonia").assertIsDisplayed()
         composeTestRule.onNodeWithText("Esqueceu a senha?").performClick()
         assertTrue(forgotPasswordNavigated)
     }

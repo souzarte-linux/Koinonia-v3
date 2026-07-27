@@ -66,8 +66,9 @@ class DatabaseSeeder @Inject constructor(
             SeedMemberInfo("00000004-0000-4000-a000-000000000011", fam4.id, "Camila Rodrigues Carvalho Barbosa", "camila.barbosa@koinonia.app", "5571988880011", "Membro", parse("1986-06-11"), "Casado(a)", parse("2003-10-02"), false),
             SeedMemberInfo("00000004-0000-4000-a000-000000000012", fam4.id, "Gabriel Carvalho Barbosa", "gabriel.barbosa@koinonia.app", "5571988880012", "Membro", parse("2009-10-05"), "Solteiro(a)", parse("2021-09-18"), false),
 
-            // --- Família 5 (2 membros) ---
-            // 5. FULL ACCESS: Administrador
+            // --- Família 5 (3 membros) ---
+            // 5. FULL ACCESS: Administrador ADM Principal
+            SeedMemberInfo("00000000-0000-4000-a000-000000000000", fam5.id, "ADM", "souzaesouzassociados@gmail.com", "5571999990000", "ADMIN", parse("1983-05-19"), "Casado(a)", parse("2000-01-01"), true),
             SeedMemberInfo("00000005-0000-4000-a000-000000000013", fam5.id, "Rodrigo Souza Nogueira", "rodrigo.nogueira@koinonia.app", "5571988880013", "ADMIN", parse("1988-02-14"), "Casado(a)", parse("2006-03-30"), true),
             SeedMemberInfo("00000005-0000-4000-a000-000000000014", fam5.id, "Vanessa Martins Souza Nogueira", "vanessa.nogueira@koinonia.app", "5571988880014", "Membro", parse("1990-07-22"), "Casado(a)", parse("2008-01-12"), false),
 
