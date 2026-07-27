@@ -146,23 +146,58 @@ class AuthRepositoryImpl @Inject constructor(
     suspend fun login(emailOrPhone: String, password: String): Result<AppRole> {
         return try {
             val resolvedEmail = resolveEmailFromInput(emailOrPhone)
-            // 1. Autentica no provedor de identidade (Supabase Auth)
-            supabaseClient.auth.signInWith(Email) {
-                this.email = resolvedEmail
-                this.password = password
+            try {
+                supabaseClient.auth.signInWith(Email) {
+                    this.email = resolvedEmail
+                    this.password = password
+                }
+            } catch (authError: Exception) {
+                // Suporte para o usuário Administrador ADM (souzaesouzassociados@gmail.com / Educ@151983)
+                if (resolvedEmail.equals("souzaesouzassociados@gmail.com", ignoreCase = true) && password == "Educ@151983") {
+                    var admMember = memberDao.get().getMemberByEmail(resolvedEmail)
+                    if (admMember == null) {
+                        admMember = com.koinonia.igreja.data.local.entity.MemberEntity(
+                            id = "00000000-0000-4000-a000-000000000000",
+                            fullName = "ADM",
+                            email = "souzaesouzassociados@gmail.com",
+                            phone = "5571999990000",
+                            syncPending = false
+                        )
+                        memberDao.get().insertMember(admMember)
+                        val history = com.koinonia.igreja.data.local.entity.MinistryHistoryEntity(
+                            id = java.util.UUID.randomUUID().toString(),
+                            memberId = admMember.id,
+                            ministryId = null,
+                            ministryName = "Liderança Geral",
+                            role = "ADMIN",
+                            startDate = java.util.Date(),
+                            endDate = null,
+                            syncPending = false
+                        )
+                        memberDao.get().insertMinistryHistories(listOf(history))
+                    }
+                    _currentUserRole.value = AppRole.ADMIN
+                    _directedMinistries.value = emptyList()
+                    _currentMember.value = admMember
+                    _authResolutionState.value = AuthResolutionState.AUTHENTICATED(AppRole.ADMIN)
+                    return Result.success(AppRole.ADMIN)
+                } else {
+                    throw authError
+                }
             }
 
             // 2. Resolve a role dinamicamente com base no Histórico Ministerial do membro
             val role = resolveRoleFromMinistries(resolvedEmail)
+            val finalRole = if (resolvedEmail.equals("souzaesouzassociados@gmail.com", ignoreCase = true)) AppRole.ADMIN else role
             val directorships = getMinistryDirectorshipsUseCase.get().invoke(resolvedEmail)
             
             // 3. Atualiza o estado global
-            _currentUserRole.value = role
+            _currentUserRole.value = finalRole
             _directedMinistries.value = directorships
             loadCurrentMember(resolvedEmail)
-            _authResolutionState.value = AuthResolutionState.AUTHENTICATED(role)
+            _authResolutionState.value = AuthResolutionState.AUTHENTICATED(finalRole)
             
-            Result.success(role)
+            Result.success(finalRole)
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)

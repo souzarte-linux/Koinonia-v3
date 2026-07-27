@@ -449,19 +449,19 @@ class FakeMemberDaoForRegVM : MemberDao {
 }
 
 class FakeMinistryDaoForRegVM : MinistryDao {
-    val ministriesList = mutableListOf<MinistryEntity>()
-    val rolesList = mutableListOf<MinistryRoleEntity>()
+    val ministriesList = java.util.concurrent.CopyOnWriteArrayList<MinistryEntity>()
+    val rolesList = java.util.concurrent.CopyOnWriteArrayList<MinistryRoleEntity>()
 
     override suspend fun insertMinistry(ministry: MinistryEntity) { ministriesList.add(ministry) }
     override suspend fun insertMinistries(ministries: List<MinistryEntity>) { ministriesList.addAll(ministries) }
-    override fun getAllMinistries(): Flow<List<MinistryEntity>> = flowOf(ministriesList)
+    override fun getAllMinistries(): Flow<List<MinistryEntity>> = flowOf(ministriesList.toList())
     override suspend fun getMinistryById(id: String): MinistryEntity? = ministriesList.find { it.id == id }
     override suspend fun deleteMinistry(id: String) { ministriesList.removeAll { it.id == id } }
     override suspend fun deleteAllMinistries() { ministriesList.clear() }
 
     override suspend fun insertRole(role: MinistryRoleEntity) { rolesList.add(role) }
     override suspend fun insertRoles(roles: List<MinistryRoleEntity>) { rolesList.addAll(roles) }
-    override fun getAllRoles(): Flow<List<MinistryRoleEntity>> = flowOf(rolesList)
+    override fun getAllRoles(): Flow<List<MinistryRoleEntity>> = flowOf(rolesList.toList())
     override suspend fun deleteRole(id: String) { rolesList.removeAll { it.id == id } }
     override suspend fun deleteAllRoles() { rolesList.clear() }
 }
