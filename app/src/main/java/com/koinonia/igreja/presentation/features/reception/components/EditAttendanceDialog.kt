@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.koinonia.igreja.presentation.features.reception.AttendanceStatus
 import com.koinonia.igreja.presentation.features.reception.MemberAttendanceState
 import java.util.Calendar
 
@@ -20,7 +21,7 @@ import java.util.Calendar
 fun EditAttendanceDialog(
     attendanceState: MemberAttendanceState,
     onDismiss: () -> Unit,
-    onSave: (status: String, hour: Int, minute: Int, lateMins: Int) -> Unit
+    onSave: (status: AttendanceStatus, hour: Int, minute: Int, lateMins: Int) -> Unit
 ) {
     val member = attendanceState.member
 
@@ -28,10 +29,10 @@ fun EditAttendanceDialog(
     var selectedStatus by remember {
         mutableStateOf(
             when {
-                attendanceState.isAbsent -> "ABSENT"
-                attendanceState.isPresent && attendanceState.isLate -> "LATE"
-                attendanceState.isPresent -> "PRESENT"
-                else -> "PRESENT"
+                attendanceState.isAbsent -> AttendanceStatus.AUSENTE
+                attendanceState.isPresent && attendanceState.isLate -> AttendanceStatus.ATRASADO
+                attendanceState.isPresent -> AttendanceStatus.PONTUAL
+                else -> AttendanceStatus.PONTUAL
             }
         )
     }
@@ -93,56 +94,56 @@ fun EditAttendanceDialog(
 
                 // Opções de Status
                 Column(modifier = Modifier.selectableGroup()) {
-                    // 1. Presente Pontual (Verde)
+                    // 1. Presente Pontual
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
-                            selected = (selectedStatus == "PRESENT"),
-                            onClick = { selectedStatus = "PRESENT" }
+                            selected = (selectedStatus == AttendanceStatus.PONTUAL),
+                            onClick = { selectedStatus = AttendanceStatus.PONTUAL }
                         )
                         Text(
                             text = "Presente (Pontual)",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF2E7D32),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
 
-                    // 2. Presente com Atraso (Laranja)
+                    // 2. Presente com Atraso
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
-                            selected = (selectedStatus == "LATE"),
-                            onClick = { selectedStatus = "LATE" }
+                            selected = (selectedStatus == AttendanceStatus.ATRASADO),
+                            onClick = { selectedStatus = AttendanceStatus.ATRASADO }
                         )
                         Text(
                             text = "Presente (Com Atraso)",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFEF6C00),
+                            color = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
 
-                    // 3. Ausente (Vermelho)
+                    // 3. Ausente
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
-                            selected = (selectedStatus == "ABSENT"),
-                            onClick = { selectedStatus = "ABSENT" }
+                            selected = (selectedStatus == AttendanceStatus.AUSENTE),
+                            onClick = { selectedStatus = AttendanceStatus.AUSENTE }
                         )
                         Text(
                             text = "Ausente",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFC62828),
+                            color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
@@ -153,8 +154,8 @@ fun EditAttendanceDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
-                            selected = (selectedStatus == "NONE"),
-                            onClick = { selectedStatus = "NONE" }
+                            selected = (selectedStatus == AttendanceStatus.NENHUM),
+                            onClick = { selectedStatus = AttendanceStatus.NENHUM }
                         )
                         Text(
                             text = "Não registrado (Limpar)",
@@ -168,7 +169,7 @@ fun EditAttendanceDialog(
                 HorizontalDivider()
 
                 // Campos de Horário de Chegada (Se Presente ou Atrasado)
-                if (selectedStatus == "PRESENT" || selectedStatus == "LATE") {
+                if (selectedStatus == AttendanceStatus.PONTUAL || selectedStatus == AttendanceStatus.ATRASADO) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = "Horário de Chegada:",
@@ -207,8 +208,8 @@ fun EditAttendanceDialog(
                     }
                 }
 
-                // Campo de Minutos de Atraso (Apenas se LATE)
-                if (selectedStatus == "LATE") {
+                // Campo de Minutos de Atraso (Apenas se ATRASADO)
+                if (selectedStatus == AttendanceStatus.ATRASADO) {
                     OutlinedTextField(
                         value = lateMinsText,
                         onValueChange = { lateMinsText = it },

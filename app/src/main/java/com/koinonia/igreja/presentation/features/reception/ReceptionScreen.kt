@@ -103,9 +103,9 @@ fun ReceptionScreen(
                         }
                         
                         val statusColor = when {
-                            memberState.isAbsent -> Color(0xFFC62828)
-                            memberState.isPresent && memberState.isLate -> Color(0xFFEF6C00)
-                            memberState.isPresent -> Color(0xFF2E7D32)
+                            memberState.isAbsent -> MaterialTheme.colorScheme.error
+                            memberState.isPresent && memberState.isLate -> MaterialTheme.colorScheme.tertiary
+                            memberState.isPresent -> MaterialTheme.colorScheme.primary
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
 
@@ -119,27 +119,61 @@ fun ReceptionScreen(
                             },
                             trailingContent = {
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Botão Presente Pontual (Verde)
+                                    // 1. Botão Presente Pontual (Primary / Verde do Tema)
                                     IconButton(
                                         onClick = {
                                             if (memberState.isPresent && !memberState.isLate) {
-                                                viewModel.setAttendanceState(member, "NONE")
+                                                viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
                                             } else {
-                                                viewModel.setAttendanceState(member, "PRESENT")
+                                                viewModel.setAttendanceState(member, AttendanceStatus.PONTUAL)
                                             }
                                         }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "Presente Pontual",
-                                            tint = if (memberState.isPresent && !memberState.isLate) Color(0xFF2E7D32) else Color.LightGray
+                                            tint = if (memberState.isPresent && !memberState.isLate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                                         )
                                     }
 
-                                    // Botão 2: Editar Chamada / Horário (Azul/Grafite)
+                                    // 2. Botão Presente com Atraso (Tertiary / Laranja do Tema)
+                                    IconButton(
+                                        onClick = {
+                                            if (memberState.isPresent && memberState.isLate) {
+                                                viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
+                                            } else {
+                                                viewModel.setAttendanceState(member, AttendanceStatus.ATRASADO)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Schedule,
+                                            contentDescription = "Presente com Atraso",
+                                            tint = if (memberState.isPresent && memberState.isLate) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                        )
+                                    }
+
+                                    // 3. Botão Ausente (Error / Vermelho do Tema)
+                                    IconButton(
+                                        onClick = {
+                                            if (memberState.isAbsent) {
+                                                viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
+                                            } else {
+                                                viewModel.setAttendanceState(member, AttendanceStatus.AUSENTE)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Ausente",
+                                            tint = if (memberState.isAbsent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                        )
+                                    }
+
+                                    // 4. Botão Editar Chamada / Horário Customizado
                                     IconButton(
                                         onClick = {
                                             viewModel.startEditing(memberState)
@@ -147,25 +181,8 @@ fun ReceptionScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
-                                            contentDescription = "Editar Chamada",
-                                            tint = if (memberState.isPresent || memberState.isAbsent) MaterialTheme.colorScheme.primary else Color.LightGray
-                                        )
-                                    }
-
-                                    // Botão Ausente (Vermelho)
-                                    IconButton(
-                                        onClick = {
-                                            if (memberState.isAbsent) {
-                                                viewModel.setAttendanceState(member, "NONE")
-                                            } else {
-                                                viewModel.setAttendanceState(member, "ABSENT")
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Ausente",
-                                            tint = if (memberState.isAbsent) Color(0xFFC62828) else Color.LightGray
+                                            contentDescription = "Editar Horário",
+                                            tint = if (memberState.isPresent || memberState.isAbsent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                                         )
                                     }
                                 }

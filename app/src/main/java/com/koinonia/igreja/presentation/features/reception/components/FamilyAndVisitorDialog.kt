@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.koinonia.igreja.presentation.features.reception.AttendanceStatus
 import com.koinonia.igreja.presentation.features.reception.ReceptionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,37 +56,42 @@ fun FamilyAndVisitorDialog(
                                 label = { Text("Nome Completo") },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
                                 value = visPhone,
                                 onValueChange = { visPhone = it },
-                                label = { Text("Celular (xx) x.xxxx-xxxx") },
+                                label = { Text("Telefone / Celular") },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(checked = visWhatsapp, onCheckedChange = { visWhatsapp = it })
-                                Text("É WhatsApp?")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                Checkbox(
+                                    checked = visWhatsapp,
+                                    onCheckedChange = { visWhatsapp = it }
+                                )
+                                Text("Possui WhatsApp?", style = MaterialTheme.typography.bodyMedium)
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = visSocial,
                                 onValueChange = { visSocial = it },
                                 label = { Text("Rede Social (Instagram/Facebook)") },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            
+                            Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = { 
+                                onClick = {
                                     if (visName.isNotBlank()) {
                                         viewModel.saveVisitor(visName, visPhone, visWhatsapp, visSocial)
                                         visName = ""
                                         visPhone = ""
+                                        visWhatsapp = false
                                         visSocial = ""
                                         visitorExpanded = false
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                                modifier = Modifier.align(Alignment.End)
                             ) {
                                 Text("Salvar Visitante")
                             }
@@ -94,9 +100,15 @@ fun FamilyAndVisitorDialog(
                 }
 
                 HorizontalDivider()
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // 2. SEÇÃO DE FAMÍLIA
-                Text("Confirmar Família", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
+                // 2. SEÇÃO DE FAMILIARES
+                Text(
+                    text = "Membros da Família:",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 
                 if (familyMembers.isEmpty()) {
                     Text(
@@ -119,13 +131,13 @@ fun FamilyAndVisitorDialog(
                                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Botão Presente Pontual (Verde)
+                                    // 1. Botão Presente Pontual (Primary)
                                     IconButton(
                                         onClick = {
                                             if (relative.isPresent && !relative.isLate) {
-                                                viewModel.setAttendanceState(member, "NONE")
+                                                viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
                                             } else {
-                                                viewModel.setAttendanceState(member, "PRESENT")
+                                                viewModel.setAttendanceState(member, AttendanceStatus.PONTUAL)
                                             }
                                         },
                                         modifier = Modifier.size(36.dp)
@@ -133,33 +145,37 @@ fun FamilyAndVisitorDialog(
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "Presente Pontual",
-                                            tint = if (relative.isPresent && !relative.isLate) Color(0xFF2E7D32) else Color.LightGray,
+                                            tint = if (relative.isPresent && !relative.isLate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
 
-                                     // Botão 2: Editar Chamada / Horário (Azul/Grafite)
-                                     IconButton(
-                                         onClick = {
-                                             viewModel.startEditing(relative)
-                                         },
-                                         modifier = Modifier.size(36.dp)
-                                     ) {
-                                         Icon(
-                                             imageVector = Icons.Default.Edit,
-                                             contentDescription = "Editar Chamada",
-                                             tint = if (relative.isPresent || relative.isAbsent) MaterialTheme.colorScheme.primary else Color.LightGray,
-                                             modifier = Modifier.size(20.dp)
-                                         )
-                                     }
+                                    // 2. Botão Presente com Atraso (Tertiary)
+                                    IconButton(
+                                        onClick = {
+                                            if (relative.isPresent && relative.isLate) {
+                                                viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
+                                            } else {
+                                                viewModel.setAttendanceState(member, AttendanceStatus.ATRASADO)
+                                            }
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Schedule,
+                                            contentDescription = "Presente com Atraso",
+                                            tint = if (relative.isPresent && relative.isLate) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
 
-                                    // Botão Ausente (Vermelho)
+                                    // 3. Botão Ausente (Error)
                                     IconButton(
                                         onClick = {
                                             if (relative.isAbsent) {
-                                                viewModel.setAttendanceState(member, "NONE")
+                                                viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
                                             } else {
-                                                viewModel.setAttendanceState(member, "ABSENT")
+                                                viewModel.setAttendanceState(member, AttendanceStatus.AUSENTE)
                                             }
                                         },
                                         modifier = Modifier.size(36.dp)
@@ -167,7 +183,22 @@ fun FamilyAndVisitorDialog(
                                         Icon(
                                             imageVector = Icons.Default.Close,
                                             contentDescription = "Ausente",
-                                            tint = if (relative.isAbsent) Color(0xFFC62828) else Color.LightGray,
+                                            tint = if (relative.isAbsent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    // 4. Botão Editar Chamada
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.startEditing(relative)
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Editar Chamada",
+                                            tint = if (relative.isPresent || relative.isAbsent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
