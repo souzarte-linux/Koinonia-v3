@@ -1,0 +1,156 @@
+package com.koinonia.igreja.e2e
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.koinonia.igreja.data.local.dao.MemberDao
+import com.koinonia.igreja.data.local.dao.MemberRegistrationDao
+import com.koinonia.igreja.data.local.dao.MinistryDao
+import com.koinonia.igreja.data.local.entity.ChildEntity
+import com.koinonia.igreja.data.local.entity.FamilyEntity
+import com.koinonia.igreja.data.local.entity.MemberEntity
+import com.koinonia.igreja.data.local.entity.MinistryEntity
+import com.koinonia.igreja.data.local.entity.MinistryHistoryEntity
+import com.koinonia.igreja.data.local.entity.MinistryRoleEntity
+import com.koinonia.igreja.data.local.seeder.DatabaseSeeder
+import com.koinonia.igreja.data.repository.AuthRepositoryImpl
+import com.koinonia.igreja.domain.model.Member
+import com.koinonia.igreja.domain.repository.MemberRepository
+import com.koinonia.igreja.domain.usecase.GetMinistryDirectorshipsUseCase
+import com.koinonia.igreja.core.util.ResultWrapper
+import com.koinonia.igreja.presentation.features.members.MemberListScreen
+import com.koinonia.igreja.presentation.features.members.MemberListViewModel
+import com.koinonia.igreja.presentation.features.members.MemberRegistrationScreen
+import com.koinonia.igreja.presentation.features.members.MemberRegistrationViewModel
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.createSupabaseClient
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class E2EMemberRegistrationFlowTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    @Test
+    fun e2e_memberRegistrationFlow_step1_memberListScreen_triggersNavigation() {
+        var navigatedToRegistration = false
+        val fakeMemberDao = FakeMemberDaoForE2EReg()
+        val fakeRegDao = FakeMemberRegDaoForE2EReg()
+        val fakeRepo = FakeMemberRepoForE2EReg()
+
+        val seeder = DatabaseSeeder(fakeRegDao, fakeRepo)
+        val listViewModel = MemberListViewModel(fakeMemberDao, seeder)
+
+        composeTestRule.setContent {
+            MemberListScreen(
+                onNavigateToRegistration = { navigatedToRegistration = true },
+                onEditMember = {},
+                onNavigateToDetails = {},
+                onMenuClick = {},
+                viewModel = listViewModel
+            )
+        }
+
+        composeTestRule.onNodeWithText("Membros (0)").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Adicionar Membro").performClick()
+        assertTrue(navigatedToRegistration)
+    }
+
+    @Test
+    fun e2e_memberRegistrationFlow_step2_memberRegistrationScreen_rendersForm() {
+        val fakeMemberDao = FakeMemberDaoForE2EReg()
+        val fakeRegDao = FakeMemberRegDaoForE2EReg()
+        val fakeMinistryDao = FakeMinistryDaoForE2EReg()
+        val fakeRepo = FakeMemberRepoForE2EReg()
+
+        val supabase = createSupabaseClient("https://dummy.supabase.co", "dummy_key") {
+            install(Auth)
+        }
+        val directorshipsUseCase = GetMinistryDirectorshipsUseCase(fakeMemberDao)
+        val authRepo = AuthRepositoryImpl(
+            supabaseClient = supabase,
+            memberDao = { fakeMemberDao },
+            getMinistryDirectorshipsUseCase = { directorshipsUseCase },
+            applicationScope = GlobalScope
+        )
+
+        val regViewModel = MemberRegistrationViewModel(
+            registrationDao = fakeRegDao,
+            memberDao = fakeMemberDao,
+            ministryDao = fakeMinistryDao,
+            authRepository = authRepo,
+            memberRepository = fakeRepo,
+            workManager = androidx.work.TestWorkManager()
+        )
+
+        composeTestRule.setContent {
+            MemberRegistrationScreen(
+                onNavigateBack = {},
+                viewModel = regViewModel
+            )
+        }
+
+        composeTestRule.onNodeWithText("Novo Membro").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Salvar Membro").assertIsDisplayed()
+    }
+}
+
+class FakeMemberDaoForE2EReg : MemberDao {
+    override fun getAllMembers(): Flow<List<MemberEntity>> = flowOf(emptyList())
+    override suspend fun getMemberById(id: String): MemberEntity? = null
+    override suspend fun getMemberByEmail(email: String): MemberEntity? = null
+    override suspend fun getMemberByPhone(phone: String): MemberEntity? = null
+    override suspend fun insertMember(member: MemberEntity) {}
+    override suspend fun insertMembers(members: List<MemberEntity>) {}
+    override suspend fun deleteById(id: String) {}
+    override suspend fun getChildrenByMemberId(memberId: String): List<ChildEntity> = emptyList()
+    override suspend fun getMinistryHistoryByMemberId(memberId: String): List<MinistryHistoryEntity> = emptyList()
+    override fun getAllMinistryHistoriesFlow(): Flow<List<MinistryHistoryEntity>> = flowOf(emptyList())
+    override suspend fun getFamilyMembers(familyId: String): List<MemberEntity> = emptyList()
+    override suspend fun getPendingSyncMembers(): List<MemberEntity> = emptyList()
+    override suspend fun markAsSynced(id: String) {}
+    override suspend fun insertMinistryHistories(histories: List<MinistryHistoryEntity>) {}
+}
+
+class FakeMemberRegDaoForE2EReg : MemberRegistrationDao {
+    override suspend fun insertFamily(family: FamilyEntity) {}
+    override suspend fun insertMember(member: MemberEntity) {}
+    override suspend fun getAllFamilies(): List<FamilyEntity> = emptyList()
+    override suspend fun insertChildren(children: List<ChildEntity>) {}
+    override suspend fun deleteChildrenByMemberId(memberId: String) {}
+    override suspend fun insertMinistryHistory(history: List<MinistryHistoryEntity>) {}
+    override suspend fun deleteMinistryHistoryByMemberId(memberId: String) {}
+    override suspend fun registerFullMember(newFamily: FamilyEntity?, member: MemberEntity, children: List<ChildEntity>, ministryHistory: List<MinistryHistoryEntity>, isEdit: Boolean) {}
+}
+
+class FakeMinistryDaoForE2EReg : MinistryDao {
+    override suspend fun insertMinistry(ministry: MinistryEntity) {}
+    override suspend fun insertMinistries(ministries: List<MinistryEntity>) {}
+    override fun getAllMinistries(): Flow<List<MinistryEntity>> = flowOf(emptyList())
+    override suspend fun getMinistryById(id: String): MinistryEntity? = null
+    override suspend fun deleteMinistry(id: String) {}
+    override suspend fun deleteAllMinistries() {}
+    override suspend fun insertRole(role: MinistryRoleEntity) {}
+    override suspend fun insertRoles(roles: List<MinistryRoleEntity>) {}
+    override fun getAllRoles(): Flow<List<MinistryRoleEntity>> = flowOf(emptyList())
+    override suspend fun deleteRole(id: String) {}
+    override suspend fun deleteAllRoles() {}
+}
+
+class FakeMemberRepoForE2EReg : MemberRepository {
+    override fun getMembersStream(): Flow<List<Member>> = flowOf(emptyList())
+    override suspend fun getMemberById(id: String): Member? = null
+    override suspend fun saveMember(member: Member) {}
+    override suspend fun deleteMember(id: String) {}
+    override suspend fun syncWithRemote(): ResultWrapper<Unit> = ResultWrapper.Success(Unit)
+}
