@@ -1,0 +1,115 @@
+# PROMPT — Validação e Cobertura de Nova Funcionalidade
+
+Uma nova funcionalidade foi implementada no projeto Koinonia v3.
+
+Antes de alterar qualquer arquivo, faça uma análise completa da implementação recém-concluída e identifique:
+
+* Quais arquivos de produção foram criados ou modificados;
+* Quais ViewModels, UseCases, Repositories, DAOs, entidades Room, Workers, telas Compose, rotas de navegação ou integrações foram afetados;
+* Quais comportamentos e regras de negócio foram introduzidos;
+* Quais riscos de regressão existem.
+
+## OBJETIVO
+
+Validar completamente a nova funcionalidade e criar os testes necessários para cobrir seus comportamentos.
+
+## REGRAS OBRIGATÓRIAS
+
+1. Não modificar código de produção apenas para fazer os testes passarem.
+2. Não alterar banco Room, entidades, migrations, Supabase, RLS, Edge Functions, credenciais ou secrets, salvo se isso fizer parte explícita da funcionalidade implementada.
+3. Não remover, enfraquecer ou ignorar testes existentes.
+4. Não modificar testes existentes para ocultar falhas.
+5. Criar novos testes somente quando houver comportamento novo que precise ser validado.
+6. Utilizar o nível de teste adequado:
+
+   * Teste unitário JVM para lógica isolada, ViewModels e UseCases;
+   * Teste instrumentado para Room, DAOs, Hilt e WorkManager;
+   * Teste Compose/UI para telas e interações;
+   * Teste E2E para fluxos completos do usuário.
+7. Sempre que possível, executar os testes no dispositivo físico Android conectado via ADB.
+8. Se algum teste instrumentado não puder ser executado, informar claramente se ele apenas compilou ou se foi realmente executado.
+9. Não considerar BUILD SUCCESSFUL como prova de que um teste foi executado com sucesso. Diferenciar sempre:
+
+   * compilado;
+   * executado;
+   * aprovado;
+   * falhou;
+   * pendente.
+
+## EXECUÇÃO
+
+1. Analise a implementação da nova funcionalidade.
+2. Determine quais testes são necessários.
+3. Crie os testes necessários nos diretórios apropriados.
+4. Execute os testes específicos da nova funcionalidade.
+5. Execute os testes de regressão necessários para verificar que as funcionalidades existentes continuam funcionando.
+6. Se houver falhas, investigue a causa raiz.
+7. Corrija somente o necessário, preservando o código de produção sempre que possível.
+8. Execute novamente os testes após qualquer correção.
+9. Execute os testes instrumentados no dispositivo físico quando aplicável.
+
+## RELATÓRIO FINAL OBRIGATÓRIO
+
+Informe:
+
+### 1. Status
+
+* CONCLUÍDA
+* CONCLUÍDA COM RESSALVAS
+* FALHOU
+
+### 2. Nova funcionalidade analisada
+
+### 3. Arquivos de produção analisados
+
+### 4. Arquivos de teste criados
+
+### 5. Testes criados
+
+Para cada teste, informe:
+
+* nome;
+* comportamento validado;
+* resultado.
+
+### 6. Testes executados
+
+Separar claramente:
+
+* testes unitários JVM;
+* testes instrumentados;
+* testes Compose/UI;
+* testes E2E;
+* testes de regressão.
+
+### 7. Resultados
+
+Informar separadamente:
+
+* total executado;
+* aprovados;
+* falhas;
+* erros;
+* testes apenas compilados;
+* testes não executados.
+
+### 8. Regressões encontradas
+
+### 9. Correções realizadas
+
+### 10. Integridade
+
+Confirmar explicitamente se houve alteração em:
+
+* app/src/main/;
+* Room;
+* migrations;
+* Supabase;
+* RLS;
+* Edge Functions;
+* credenciais;
+* secrets;
+* commits;
+* pushes.
+
+Não declarar que os testes foram aprovados se eles apenas foram compilados.
