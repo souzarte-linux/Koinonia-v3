@@ -46,9 +46,9 @@ class LoginScreenTest {
             )
         }
 
-        // Verifica renderização do título e campos
+        // Verifica renderização do título e botão de esqueci a senha
         composeTestRule.onNodeWithText("Ministério do Diácono").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Esqueci minha senha").performClick()
+        composeTestRule.onNodeWithText("Esqueceu a senha?").performClick()
         assertTrue(forgotPasswordClicked)
     }
 }
