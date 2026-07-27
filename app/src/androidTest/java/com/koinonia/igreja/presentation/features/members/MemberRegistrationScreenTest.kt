@@ -68,7 +68,7 @@ class MemberRegistrationScreenTest {
         }
 
         composeTestRule.onNodeWithText("Novo Membro").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Nome Completo *").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Salvar Membro").assertIsDisplayed()
     }
 }
 

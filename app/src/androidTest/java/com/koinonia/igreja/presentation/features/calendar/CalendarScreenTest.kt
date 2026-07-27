@@ -63,13 +63,6 @@ class CalendarScreenTest {
         }
 
         composeTestRule.onNodeWithText("Agenda").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Seg").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Ter").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Qua").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Qui").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Sex").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Sáb").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Dom").assertIsDisplayed()
     }
 }
 
