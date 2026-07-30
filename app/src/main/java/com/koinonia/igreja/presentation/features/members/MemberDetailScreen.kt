@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ import java.util.Locale
 fun MemberDetailScreen(
     memberId: String,
     viewModel: MembersViewModel,
+    onEdit: (() -> Unit)? = null,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -61,8 +63,29 @@ fun MemberDetailScreen(
                             contentDescription = "Voltar"
                         )
                     }
+                },
+                actions = {
+                    IconButton(onClick = { onEdit?.invoke() }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar Membro",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { onEdit?.invoke() },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Editar Membro"
+                )
+            }
         }
     ) { paddingValues ->
         if (member == null) {

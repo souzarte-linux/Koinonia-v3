@@ -469,6 +469,9 @@ fun AppNavigation(
                     MemberDetailScreen(
                         memberId = memberId,
                         viewModel = viewModel,
+                        onEdit = {
+                            navController.navigate("member_registration?memberId=$memberId")
+                        },
                         onBack = {
                             navController.popBackStack()
                         }

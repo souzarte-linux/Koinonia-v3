@@ -1,21 +1,33 @@
 package com.koinonia.igreja.presentation.features.members
 
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 import com.koinonia.igreja.presentation.components.AppTopBar
@@ -98,6 +110,8 @@ fun MemberListScreen(
             }
             items(members) { item ->
                 val member = item.member
+                val context = LocalContext.current
+
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
@@ -110,9 +124,51 @@ fun MemberListScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Foto do membro em moldura redonda alinhada na esquerda
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            val photoBitmap = remember(member.photoUrl) {
+                                if (!member.photoUrl.isNullOrEmpty()) {
+                                    try {
+                                        val uri = Uri.parse(member.photoUrl)
+                                        if (Build.VERSION.SDK_INT < 28) {
+                                            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                                        } else {
+                                            val source = ImageDecoder.createSource(context.contentResolver, uri)
+                                            ImageDecoder.decodeBitmap(source)
+                                        }
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                } else null
+                            }
+
+                            if (photoBitmap != null) {
+                                Image(
+                                    bitmap = photoBitmap.asImageBitmap(),
+                                    contentDescription = "Foto de ${member.fullName}",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Sem foto",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = member.fullName,
