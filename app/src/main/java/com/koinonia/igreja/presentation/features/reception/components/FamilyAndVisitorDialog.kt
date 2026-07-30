@@ -131,6 +131,7 @@ fun FamilyAndVisitorDialog(
                                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+<<<<<<< HEAD
                                     // 1. Botão Presente Pontual (Primary)
                                     IconButton(
                                         onClick = {
@@ -138,6 +139,15 @@ fun FamilyAndVisitorDialog(
                                                 viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
                                             } else {
                                                 viewModel.setAttendanceState(member, AttendanceStatus.PONTUAL)
+=======
+                                    // Botão Presente Pontual (Verde)
+                                    IconButton(
+                                        onClick = {
+                                            if (relative.isPresent && !relative.isLate) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "PRESENT")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                             }
                                         },
                                         modifier = Modifier.size(36.dp)
@@ -145,11 +155,16 @@ fun FamilyAndVisitorDialog(
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "Presente Pontual",
+<<<<<<< HEAD
                                             tint = if (relative.isPresent && !relative.isLate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+=======
+                                            tint = if (relative.isPresent && !relative.isLate) Color(0xFF2E7D32) else Color.LightGray,
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
 
+<<<<<<< HEAD
                                     // 2. Botão Presente com Atraso (Tertiary)
                                     IconButton(
                                         onClick = {
@@ -176,6 +191,30 @@ fun FamilyAndVisitorDialog(
                                                 viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
                                             } else {
                                                 viewModel.setAttendanceState(member, AttendanceStatus.AUSENTE)
+=======
+                                     // Botão 2: Editar Chamada / Horário (Azul/Grafite)
+                                     IconButton(
+                                         onClick = {
+                                             viewModel.startEditing(relative)
+                                         },
+                                         modifier = Modifier.size(36.dp)
+                                     ) {
+                                         Icon(
+                                             imageVector = Icons.Default.Edit,
+                                             contentDescription = "Editar Chamada",
+                                             tint = if (relative.isPresent || relative.isAbsent) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                             modifier = Modifier.size(20.dp)
+                                         )
+                                     }
+
+                                    // Botão Ausente (Vermelho)
+                                    IconButton(
+                                        onClick = {
+                                            if (relative.isAbsent) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "ABSENT")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                             }
                                         },
                                         modifier = Modifier.size(36.dp)
@@ -183,6 +222,7 @@ fun FamilyAndVisitorDialog(
                                         Icon(
                                             imageVector = Icons.Default.Close,
                                             contentDescription = "Ausente",
+<<<<<<< HEAD
                                             tint = if (relative.isAbsent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -199,6 +239,9 @@ fun FamilyAndVisitorDialog(
                                             imageVector = Icons.Default.Edit,
                                             contentDescription = "Editar Chamada",
                                             tint = if (relative.isPresent || relative.isAbsent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+=======
+                                            tint = if (relative.isAbsent) Color(0xFFC62828) else Color.LightGray,
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }

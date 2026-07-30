@@ -103,9 +103,15 @@ fun ReceptionScreen(
                         }
                         
                         val statusColor = when {
+<<<<<<< HEAD
                             memberState.isAbsent -> MaterialTheme.colorScheme.error
                             memberState.isPresent && memberState.isLate -> MaterialTheme.colorScheme.tertiary
                             memberState.isPresent -> MaterialTheme.colorScheme.primary
+=======
+                            memberState.isAbsent -> Color(0xFFC62828)
+                            memberState.isPresent && memberState.isLate -> Color(0xFFEF6C00)
+                            memberState.isPresent -> Color(0xFF2E7D32)
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
 
@@ -119,6 +125,7 @@ fun ReceptionScreen(
                             },
                             trailingContent = {
                                 Row(
+<<<<<<< HEAD
                                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -129,12 +136,25 @@ fun ReceptionScreen(
                                                 viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
                                             } else {
                                                 viewModel.setAttendanceState(member, AttendanceStatus.PONTUAL)
+=======
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Botão Presente Pontual (Verde)
+                                    IconButton(
+                                        onClick = {
+                                            if (memberState.isPresent && !memberState.isLate) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "PRESENT")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                             }
                                         }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = "Presente Pontual",
+<<<<<<< HEAD
                                             tint = if (memberState.isPresent && !memberState.isLate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                                         )
                                     }
@@ -174,6 +194,13 @@ fun ReceptionScreen(
                                     }
 
                                     // 4. Botão Editar Chamada / Horário Customizado
+=======
+                                            tint = if (memberState.isPresent && !memberState.isLate) Color(0xFF2E7D32) else Color.LightGray
+                                        )
+                                    }
+
+                                    // Botão 2: Editar Chamada / Horário (Azul/Grafite)
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                     IconButton(
                                         onClick = {
                                             viewModel.startEditing(memberState)
@@ -181,8 +208,30 @@ fun ReceptionScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
+<<<<<<< HEAD
                                             contentDescription = "Editar Horário",
                                             tint = if (memberState.isPresent || memberState.isAbsent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+=======
+                                            contentDescription = "Editar Chamada",
+                                            tint = if (memberState.isPresent || memberState.isAbsent) MaterialTheme.colorScheme.primary else Color.LightGray
+                                        )
+                                    }
+
+                                    // Botão Ausente (Vermelho)
+                                    IconButton(
+                                        onClick = {
+                                            if (memberState.isAbsent) {
+                                                viewModel.setAttendanceState(member, "NONE")
+                                            } else {
+                                                viewModel.setAttendanceState(member, "ABSENT")
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Ausente",
+                                            tint = if (memberState.isAbsent) Color(0xFFC62828) else Color.LightGray
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                                         )
                                     }
                                 }

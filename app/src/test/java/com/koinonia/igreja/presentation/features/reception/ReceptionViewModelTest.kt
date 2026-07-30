@@ -158,7 +158,11 @@ class ReceptionViewModelTest {
         viewModel.initReception("event_100", startTime)
         testScheduler.advanceUntilIdle()
 
+<<<<<<< HEAD
         viewModel.setAttendanceState(member, AttendanceStatus.AUSENTE)
+=======
+        viewModel.setAttendanceState(member, "ABSENT")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         testScheduler.advanceUntilIdle()
 
         val savedAtt = fakeAttendanceDao.attendances.find { it.memberId == "m1" && it.eventId == "event_100" }
@@ -175,7 +179,11 @@ class ReceptionViewModelTest {
         viewModel.initReception("event_100", startTime)
         testScheduler.advanceUntilIdle()
 
+<<<<<<< HEAD
         viewModel.setAttendanceState(member, AttendanceStatus.ATRASADO)
+=======
+        viewModel.setAttendanceState(member, "LATE")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         testScheduler.advanceUntilIdle()
 
         val savedAtt = fakeAttendanceDao.attendances.find { it.memberId == "m1" && it.eventId == "event_100" }
@@ -206,7 +214,11 @@ class ReceptionViewModelTest {
         viewModel.initReception("event_100", startTime)
         testScheduler.advanceUntilIdle()
 
+<<<<<<< HEAD
         viewModel.setAttendanceState(member, AttendanceStatus.NENHUM)
+=======
+        viewModel.setAttendanceState(member, "NONE")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         testScheduler.advanceUntilIdle()
 
         val savedAtt = fakeAttendanceDao.attendances.find { it.memberId == "m1" && it.eventId == "event_100" }
@@ -223,7 +235,11 @@ class ReceptionViewModelTest {
         viewModel.initReception("event_100", startTime)
         testScheduler.advanceUntilIdle()
 
+<<<<<<< HEAD
         viewModel.setAttendanceState(member1, AttendanceStatus.PONTUAL)
+=======
+        viewModel.setAttendanceState(member1, "PRESENT")
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         testScheduler.advanceUntilIdle()
 
         assertTrue(viewModel.showFamilyPopup.value)
@@ -232,6 +248,7 @@ class ReceptionViewModelTest {
     }
 
     @Test
+<<<<<<< HEAD
     fun manuallyFinalizeEvent_afterManualAbsence_doesNotDuplicateAttendance() = runTest {
         val startTime = ZonedDateTime.now(ZoneId.of("America/Bahia"))
         val member1 = MemberEntity(id = "m1", fullName = "João Silva")
@@ -302,6 +319,8 @@ class ReceptionViewModelTest {
     }
 
     @Test
+=======
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
     fun saveVisitor_insertsVisitorEntityInDao() = runTest {
         val startTime = ZonedDateTime.now(ZoneId.of("America/Bahia"))
         viewModel.initReception("event_100", startTime)
@@ -335,7 +354,11 @@ class ReceptionViewModelTest {
         viewModel.initReception("event_100", startTime)
         testScheduler.advanceUntilIdle()
 
+<<<<<<< HEAD
         viewModel.saveCustomAttendance(member, AttendanceStatus.ATRASADO, 19, 30, 25)
+=======
+        viewModel.saveCustomAttendance(member, "LATE", 19, 30, 25)
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         testScheduler.advanceUntilIdle()
 
         val savedAtt = fakeAttendanceDao.attendances.find { it.memberId == "m1" && it.eventId == "event_100" }

@@ -133,16 +133,27 @@ class ReceptionViewModel @Inject constructor(
     }
 
     fun markPresence(member: MemberEntity) {
+<<<<<<< HEAD
         setAttendanceState(member, AttendanceStatus.PONTUAL)
     }
 
     fun setAttendanceState(member: MemberEntity, state: AttendanceStatus) {
+=======
+        setAttendanceState(member, "PRESENT")
+    }
+
+    fun setAttendanceState(member: MemberEntity, state: String) {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         viewModelScope.launch {
             val eventId = _currentEventId.value ?: return@launch
             val expectedStartTime = _currentEventStartTime.value ?: return@launch
 
             when (state) {
+<<<<<<< HEAD
                 AttendanceStatus.PONTUAL -> {
+=======
+                "PRESENT" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     attendanceRepository.markPresenceManual(member.id, eventId, isAbsent = false, isLate = false, lateDurationMins = 0)
                     
                     val updatedStates = currentFamilyMembers.value.map { st ->
@@ -177,7 +188,11 @@ class ReceptionViewModel @Inject constructor(
                         }
                     }
                 }
+<<<<<<< HEAD
                 AttendanceStatus.ATRASADO -> {
+=======
+                "LATE" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     val arrivalTime = TimeManager.nowZoned()
                     val lateMins = TimeManager.calculateLateMinutes(expectedStartTime, arrivalTime)
                     val finalLateMins = if (lateMins > 0) lateMins else 15
@@ -215,7 +230,11 @@ class ReceptionViewModel @Inject constructor(
                         }
                     }
                 }
+<<<<<<< HEAD
                 AttendanceStatus.AUSENTE -> {
+=======
+                "ABSENT" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     attendanceRepository.markPresenceManual(member.id, eventId, isAbsent = true, isLate = false, lateDurationMins = 0)
                     
                     val updatedStates = currentFamilyMembers.value.map { st ->
@@ -227,7 +246,11 @@ class ReceptionViewModel @Inject constructor(
                     }
                     currentFamilyMembers.value = updatedStates
                 }
+<<<<<<< HEAD
                 AttendanceStatus.NENHUM -> {
+=======
+                "NONE" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     attendanceRepository.deletePresence(member.id, eventId)
                     
                     val updatedStates = currentFamilyMembers.value.map { st ->
@@ -272,7 +295,11 @@ class ReceptionViewModel @Inject constructor(
 
     fun saveCustomAttendance(
         member: MemberEntity,
+<<<<<<< HEAD
         status: AttendanceStatus,
+=======
+        status: String,
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         customHour: Int,
         customMinute: Int,
         customLateMins: Int
@@ -281,10 +308,17 @@ class ReceptionViewModel @Inject constructor(
             val eventId = _currentEventId.value ?: return@launch
 
             when (status) {
+<<<<<<< HEAD
                 AttendanceStatus.NENHUM -> {
                     attendanceRepository.deletePresence(member.id, eventId)
                 }
                 AttendanceStatus.AUSENTE -> {
+=======
+                "NONE" -> {
+                    attendanceRepository.deletePresence(member.id, eventId)
+                }
+                "ABSENT" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     attendanceRepository.saveCustomAttendanceRecord(
                         memberId = member.id,
                         eventId = eventId,
@@ -294,7 +328,11 @@ class ReceptionViewModel @Inject constructor(
                         arrivalTime = null
                     )
                 }
+<<<<<<< HEAD
                 AttendanceStatus.PONTUAL -> {
+=======
+                "PRESENT" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     val cal = java.util.Calendar.getInstance()
                     cal.set(java.util.Calendar.HOUR_OF_DAY, customHour)
                     cal.set(java.util.Calendar.MINUTE, customMinute)
@@ -310,7 +348,11 @@ class ReceptionViewModel @Inject constructor(
                         arrivalTime = cal.time
                     )
                 }
+<<<<<<< HEAD
                 AttendanceStatus.ATRASADO -> {
+=======
+                "LATE" -> {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     val cal = java.util.Calendar.getInstance()
                     cal.set(java.util.Calendar.HOUR_OF_DAY, customHour)
                     cal.set(java.util.Calendar.MINUTE, customMinute)

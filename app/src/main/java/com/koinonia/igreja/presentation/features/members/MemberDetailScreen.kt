@@ -14,7 +14,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+<<<<<<< HEAD
 import androidx.compose.material.icons.filled.Edit
+=======
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -63,6 +66,7 @@ fun MemberDetailScreen(
                             contentDescription = "Voltar"
                         )
                     }
+<<<<<<< HEAD
                 },
                 actions = {
                     IconButton(onClick = { onEdit?.invoke() }) {
@@ -86,6 +90,10 @@ fun MemberDetailScreen(
                     contentDescription = "Editar Membro"
                 )
             }
+=======
+                }
+            )
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
         }
     ) { paddingValues ->
         if (member == null) {

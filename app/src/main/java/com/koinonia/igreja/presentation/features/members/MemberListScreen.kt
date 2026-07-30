@@ -1,11 +1,14 @@
 package com.koinonia.igreja.presentation.features.members
 
+<<<<<<< HEAD
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+=======
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,17 +20,24 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
+<<<<<<< HEAD
 import androidx.compose.material.icons.filled.Person
+=======
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+<<<<<<< HEAD
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+=======
+import androidx.compose.ui.graphics.Color
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
 import androidx.compose.ui.unit.dp
 
 import com.koinonia.igreja.presentation.components.AppTopBar
@@ -110,8 +120,11 @@ fun MemberListScreen(
             }
             items(members) { item ->
                 val member = item.member
+<<<<<<< HEAD
                 val context = LocalContext.current
 
+=======
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
@@ -124,6 +137,7 @@ fun MemberListScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+<<<<<<< HEAD
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -169,6 +183,11 @@ fun MemberListScreen(
                             }
                         }
 
+=======
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = member.fullName,

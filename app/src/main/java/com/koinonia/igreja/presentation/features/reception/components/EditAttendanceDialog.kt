@@ -13,7 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+<<<<<<< HEAD
 import com.koinonia.igreja.presentation.features.reception.AttendanceStatus
+=======
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
 import com.koinonia.igreja.presentation.features.reception.MemberAttendanceState
 import java.util.Calendar
 
@@ -21,7 +24,11 @@ import java.util.Calendar
 fun EditAttendanceDialog(
     attendanceState: MemberAttendanceState,
     onDismiss: () -> Unit,
+<<<<<<< HEAD
     onSave: (status: AttendanceStatus, hour: Int, minute: Int, lateMins: Int) -> Unit
+=======
+    onSave: (status: String, hour: Int, minute: Int, lateMins: Int) -> Unit
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
 ) {
     val member = attendanceState.member
 
@@ -29,10 +36,17 @@ fun EditAttendanceDialog(
     var selectedStatus by remember {
         mutableStateOf(
             when {
+<<<<<<< HEAD
                 attendanceState.isAbsent -> AttendanceStatus.AUSENTE
                 attendanceState.isPresent && attendanceState.isLate -> AttendanceStatus.ATRASADO
                 attendanceState.isPresent -> AttendanceStatus.PONTUAL
                 else -> AttendanceStatus.PONTUAL
+=======
+                attendanceState.isAbsent -> "ABSENT"
+                attendanceState.isPresent && attendanceState.isLate -> "LATE"
+                attendanceState.isPresent -> "PRESENT"
+                else -> "PRESENT"
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
             }
         )
     }
@@ -94,56 +108,95 @@ fun EditAttendanceDialog(
 
                 // Opções de Status
                 Column(modifier = Modifier.selectableGroup()) {
+<<<<<<< HEAD
                     // 1. Presente Pontual
+=======
+                    // 1. Presente Pontual (Verde)
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
+<<<<<<< HEAD
                             selected = (selectedStatus == AttendanceStatus.PONTUAL),
                             onClick = { selectedStatus = AttendanceStatus.PONTUAL }
+=======
+                            selected = (selectedStatus == "PRESENT"),
+                            onClick = { selectedStatus = "PRESENT" }
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                         )
                         Text(
                             text = "Presente (Pontual)",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
+<<<<<<< HEAD
                             color = MaterialTheme.colorScheme.primary,
+=======
+                            color = Color(0xFF2E7D32),
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
 
+<<<<<<< HEAD
                     // 2. Presente com Atraso
+=======
+                    // 2. Presente com Atraso (Laranja)
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
+<<<<<<< HEAD
                             selected = (selectedStatus == AttendanceStatus.ATRASADO),
                             onClick = { selectedStatus = AttendanceStatus.ATRASADO }
+=======
+                            selected = (selectedStatus == "LATE"),
+                            onClick = { selectedStatus = "LATE" }
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                         )
                         Text(
                             text = "Presente (Com Atraso)",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
+<<<<<<< HEAD
                             color = MaterialTheme.colorScheme.tertiary,
+=======
+                            color = Color(0xFFEF6C00),
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
 
+<<<<<<< HEAD
                     // 3. Ausente
+=======
+                    // 3. Ausente (Vermelho)
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
+<<<<<<< HEAD
                             selected = (selectedStatus == AttendanceStatus.AUSENTE),
                             onClick = { selectedStatus = AttendanceStatus.AUSENTE }
+=======
+                            selected = (selectedStatus == "ABSENT"),
+                            onClick = { selectedStatus = "ABSENT" }
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                         )
                         Text(
                             text = "Ausente",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
+<<<<<<< HEAD
                             color = MaterialTheme.colorScheme.error,
+=======
+                            color = Color(0xFFC62828),
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
@@ -154,8 +207,13 @@ fun EditAttendanceDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         RadioButton(
+<<<<<<< HEAD
                             selected = (selectedStatus == AttendanceStatus.NENHUM),
                             onClick = { selectedStatus = AttendanceStatus.NENHUM }
+=======
+                            selected = (selectedStatus == "NONE"),
+                            onClick = { selectedStatus = "NONE" }
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                         )
                         Text(
                             text = "Não registrado (Limpar)",
@@ -169,7 +227,11 @@ fun EditAttendanceDialog(
                 HorizontalDivider()
 
                 // Campos de Horário de Chegada (Se Presente ou Atrasado)
+<<<<<<< HEAD
                 if (selectedStatus == AttendanceStatus.PONTUAL || selectedStatus == AttendanceStatus.ATRASADO) {
+=======
+                if (selectedStatus == "PRESENT" || selectedStatus == "LATE") {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = "Horário de Chegada:",
@@ -208,8 +270,13 @@ fun EditAttendanceDialog(
                     }
                 }
 
+<<<<<<< HEAD
                 // Campo de Minutos de Atraso (Apenas se ATRASADO)
                 if (selectedStatus == AttendanceStatus.ATRASADO) {
+=======
+                // Campo de Minutos de Atraso (Apenas se LATE)
+                if (selectedStatus == "LATE") {
+>>>>>>> 3cb5d1def15c23261e5075e7913745971ea14cd2
                     OutlinedTextField(
                         value = lateMinsText,
                         onValueChange = { lateMinsText = it },
